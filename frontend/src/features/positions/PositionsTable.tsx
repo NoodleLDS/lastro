@@ -21,7 +21,7 @@ export function PositionsTable({
   const refreshQuotes = useRefreshQuotes()
 
   return (
-    <div className="flex w-full max-w-4xl flex-col gap-4">
+    <div className="flex w-full flex-col gap-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Carteira</h2>
         <Button onClick={() => refreshQuotes.mutate()} disabled={refreshQuotes.isPending}>

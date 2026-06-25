@@ -22,7 +22,7 @@ export function AllocationChart() {
   }))
 
   return (
-    <Card className="w-full max-w-2xl">
+    <Card className="w-full">
       <CardHeader>
         <CardTitle>Alocação por classe</CardTitle>
       </CardHeader>
