@@ -1,6 +1,11 @@
+from datetime import date as date_
+
+import httpx
 import pytest
 from httpx import AsyncClient
+from sqlmodel.ext.asyncio.session import AsyncSession
 
+from lastro.models.price_snapshot import PriceSnapshot
 from lastro.services.quotes.provider import Quote
 
 
@@ -80,3 +85,54 @@ async def test_fire_simulator_endpoint(
     body = response.json()
     assert body["safe_withdrawal_rate_pct"] == pytest.approx(-4.0)
     assert body["has_reached_target"] is False
+
+
+async def test_fire_simulator_endpoint_retorna_503_quando_bcb_indisponivel(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def fake_get_ipca_rate_offline(self) -> float:
+        raise httpx.ConnectError("connection refused")
+
+    monkeypatch.setattr(
+        "lastro.services.quotes.bcb.BCBProvider.get_ipca_rate", fake_get_ipca_rate_offline
+    )
+
+    response = await client.get(
+        "/dashboard/fire-simulator", params={"target_monthly_expense_cents": 500_00}
+    )
+
+    assert response.status_code == 503
+    assert "detail" in response.json()
+
+
+async def test_evolution_endpoint_retorna_503_quando_bcb_indisponivel(
+    client: AsyncClient, session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def fake_get_accumulated_rate_offline(self, *, series_code, start, end) -> float:
+        raise httpx.ReadTimeout("timed out")
+
+    monkeypatch.setattr(
+        "lastro.services.quotes.bcb.BCBProvider.get_accumulated_rate",
+        fake_get_accumulated_rate_offline,
+    )
+
+    session.add(
+        PriceSnapshot(
+            month=date_(2026, 1, 1),
+            portfolio_value_cents=100_000_00,
+            emergency_reserve_value_cents=0,
+        )
+    )
+    session.add(
+        PriceSnapshot(
+            month=date_(2026, 2, 1),
+            portfolio_value_cents=110_000_00,
+            emergency_reserve_value_cents=0,
+        )
+    )
+    await session.commit()
+
+    response = await client.get("/dashboard/evolution")
+
+    assert response.status_code == 503
+    assert "detail" in response.json()

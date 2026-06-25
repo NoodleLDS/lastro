@@ -1,6 +1,8 @@
 from datetime import date, timedelta
 
-from fastapi import APIRouter, Depends
+import httpx
+import structlog
+from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -21,8 +23,12 @@ from lastro.services.analytics.projection import project_portfolio_value
 from lastro.services.quotes.bcb import BCBProvider
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
+logger = structlog.get_logger()
 
 _CDI_SERIES_CODE = 12
+_BCB_UNAVAILABLE_DETAIL = (
+    "Serviço de cotações do Banco Central (BCB) indisponível, tente novamente em breve."
+)
 
 
 @router.get("/evolution", response_model=EvolutionResponse)
@@ -35,9 +41,13 @@ async def get_evolution(session: AsyncSession = Depends(get_session)) -> Evoluti
     if len(snapshots) >= 2:
         ordered = sorted(snapshots, key=lambda s: s.month)
         bcb = BCBProvider()
-        cdi_accumulated_pct = await bcb.get_accumulated_rate(
-            series_code=_CDI_SERIES_CODE, start=ordered[0].month, end=ordered[-1].month
-        )
+        try:
+            cdi_accumulated_pct = await bcb.get_accumulated_rate(
+                series_code=_CDI_SERIES_CODE, start=ordered[0].month, end=ordered[-1].month
+            )
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError) as exc:
+            logger.warning("bcb_indisponivel", error=str(exc))
+            raise HTTPException(status_code=503, detail=_BCB_UNAVAILABLE_DETAIL) from exc
 
         ivvb11_result = await session.exec(
             select(Position).where(Position.ticker == "IVVB11", Position.is_active.is_(True))
@@ -121,7 +131,11 @@ async def get_fire_simulator(
     )
 
     bcb = BCBProvider()
-    ipca_pct = await bcb.get_ipca_rate()
+    try:
+        ipca_pct = await bcb.get_ipca_rate()
+    except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError) as exc:
+        logger.warning("bcb_indisponivel", error=str(exc))
+        raise HTTPException(status_code=503, detail=_BCB_UNAVAILABLE_DETAIL) from exc
 
     return calculate_fire(
         portfolio_value_cents, dividend_yield_pct, ipca_pct, target_monthly_expense_cents
