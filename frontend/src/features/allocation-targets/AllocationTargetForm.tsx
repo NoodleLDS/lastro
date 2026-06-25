@@ -39,36 +39,44 @@ export function AllocationTargetForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-end gap-2">
-      <div className="flex flex-col gap-1">
-        <Label htmlFor="target-asset-type">Classe</Label>
-        <Select value={assetType} onValueChange={setAssetType}>
-          <SelectTrigger id="target-asset-type">
-            <SelectValue placeholder="selecione" />
-          </SelectTrigger>
-          <SelectContent>
-            {ASSET_TYPES.map((type) => (
-              <SelectItem key={type.value} value={type.value}>
-                {type.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+      <div className="flex items-end gap-2">
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="target-asset-type">Classe</Label>
+          <Select value={assetType} onValueChange={setAssetType}>
+            <SelectTrigger id="target-asset-type">
+              <SelectValue placeholder="selecione" />
+            </SelectTrigger>
+            <SelectContent>
+              {ASSET_TYPES.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="target-percentage">Meta (%)</Label>
+          <Input
+            id="target-percentage"
+            type="number"
+            step="0.1"
+            min={0}
+            max={100}
+            value={targetPercentage}
+            onChange={(e) => setTargetPercentage(e.target.value)}
+            required
+          />
+        </div>
+        <Button type="submit" disabled={createTarget.isPending}>
+          {createTarget.isPending ? 'Definindo...' : 'Definir meta'}
+        </Button>
       </div>
-      <div className="flex flex-col gap-1">
-        <Label htmlFor="target-percentage">Meta (%)</Label>
-        <Input
-          id="target-percentage"
-          type="number"
-          step="0.1"
-          value={targetPercentage}
-          onChange={(e) => setTargetPercentage(e.target.value)}
-          required
-        />
-      </div>
-      <Button type="submit" disabled={createTarget.isPending}>
-        Definir meta
-      </Button>
+
+      {createTarget.isError && (
+        <p className="text-sm text-destructive">{createTarget.error.message}</p>
+      )}
     </form>
   )
 }
