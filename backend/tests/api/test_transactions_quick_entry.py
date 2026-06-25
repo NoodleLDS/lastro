@@ -78,3 +78,28 @@ async def test_delete_transaction(client: AsyncClient) -> None:
 async def test_delete_transaction_not_found(client: AsyncClient) -> None:
     response = await client.delete("/transactions/999")
     assert response.status_code == 404
+
+
+async def test_delete_transacao_raiz_parcelada_remove_parcelas_filhas_em_cascata(
+    client: AsyncClient,
+) -> None:
+    card = await _create_card(client)
+    created = (
+        await client.post(
+            "/transactions/quick-entry",
+            json={"card_id": card["id"], "raw": "tablet 335,98 3/9", "date": "2026-06-10"},
+        )
+    ).json()
+
+    root_id = created["transaction"]["id"]
+    installment_ids = [i["id"] for i in created["installments"]]
+    assert installment_ids
+
+    response = await client.delete(f"/transactions/{root_id}")
+    assert response.status_code == 204
+
+    remaining = (await client.get("/transactions")).json()
+    remaining_ids = {t["id"] for t in remaining}
+    assert root_id not in remaining_ids
+    for installment_id in installment_ids:
+        assert installment_id not in remaining_ids

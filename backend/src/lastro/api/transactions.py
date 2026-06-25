@@ -190,6 +190,12 @@ async def delete_transaction(
     if transaction is None:
         raise HTTPException(status_code=404, detail="transação não encontrada")
 
+    children_result = await session.exec(
+        select(Transaction).where(Transaction.parent_id == transaction_id)
+    )
+    for child in children_result.all():
+        await session.delete(child)
+
     await session.delete(transaction)
     await session.commit()
 
