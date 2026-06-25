@@ -37,11 +37,13 @@ export function QuickEntryInput({ cardId, cardName }: QuickEntryInputProps) {
           </Button>
         </form>
 
+        {quickEntry.isPending && <p className="text-sm text-muted-foreground">Salvando...</p>}
+
         {quickEntry.isError && (
           <p className="text-sm text-destructive">{quickEntry.error.message}</p>
         )}
 
-        {quickEntry.isSuccess && (
+        {!quickEntry.isPending && quickEntry.isSuccess && (
           <p className="text-sm text-muted-foreground">
             {quickEntry.data.transaction.description} — R${' '}
             {(quickEntry.data.transaction.amount_cents / 100).toFixed(2)}

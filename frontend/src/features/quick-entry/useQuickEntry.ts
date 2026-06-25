@@ -28,6 +28,14 @@ export function useQuickEntry() {
   return useMutation({
     mutationFn: async (input: { card_id: number; raw: string; date: string }) =>
       quickEntryResultSchema.parse(await apiPost('/transactions/quick-entry', input)),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+    // Otimismo parcial: o servidor decide categoria e projeção de parcelas a
+    // partir do texto cru (`raw`), então não há como montar um item de
+    // transação confiável no cliente sem duplicar essa lógica. Em vez de
+    // inserir um item completo no cache de `transactions` (arriscando
+    // categoria/parcelas erradas que depois "trocam" quando a resposta real
+    // chega), o componente usa `isPending` para mostrar um estado de
+    // "salvando..." instantâneo. A lista só é atualizada de fato em
+    // onSettled, com o dado real do servidor.
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['transactions'] }),
   })
 }
