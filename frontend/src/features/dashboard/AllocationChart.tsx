@@ -2,13 +2,10 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
+import { formatCents } from '@/lib/format'
 import { useAllocation } from './useAllocation'
 
-const COLORS = ['#c084fc', '#34d399', '#fbbf24', '#60a5fa', '#f87171']
-
-function formatCents(cents: number): string {
-  return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
+const COLORS = ['var(--primary)', 'var(--success)', 'var(--warning)', '#60a5fa', 'var(--destructive)']
 
 export function AllocationChart() {
   const { data: allocation, isLoading } = useAllocation()
@@ -32,7 +29,13 @@ export function AllocationChart() {
       <CardContent className="flex flex-col gap-4">
         <ResponsiveContainer width="100%" height={220}>
           <PieChart>
-            <Pie data={chartData} dataKey="value" nameKey="label" outerRadius={80} label>
+            <Pie
+              data={chartData}
+              dataKey="value"
+              nameKey="label"
+              outerRadius={80}
+              label={({ name }) => name}
+            >
               {chartData.map((entry, index) => (
                 <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
               ))}
@@ -42,10 +45,16 @@ export function AllocationChart() {
         </ResponsiveContainer>
 
         <div className="flex flex-col gap-3">
-          {allocation.map((item) => (
+          {allocation.map((item, index) => (
             <div key={item.asset_type} className="flex flex-col gap-1">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">{item.asset_type}</span>
+                <span className="flex items-center gap-2 font-medium">
+                  <span
+                    className="size-2 rounded-full"
+                    style={{ background: COLORS[index % COLORS.length] }}
+                  />
+                  {item.asset_type}
+                </span>
                 <span>
                   {item.current_percentage.toFixed(1)}%
                   {item.target_percentage !== null && ` (meta: ${item.target_percentage}%)`}
