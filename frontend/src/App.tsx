@@ -10,10 +10,11 @@ import { PositionDetailPage } from '@/features/positions/PositionDetailPage'
 import { PositionsTable } from '@/features/positions/PositionsTable'
 import type { Position } from '@/features/positions/usePositions'
 import { QuickEntryInput } from '@/features/quick-entry/QuickEntryInput'
+import { TransactionsPage } from '@/features/transactions/TransactionsPage'
 import { VisionPreviewTable } from '@/features/vision-preview/VisionPreviewTable'
 import { VisionUpload } from '@/features/vision-preview/VisionUpload'
 
-type Tab = 'cards' | 'rules' | 'portfolio' | 'dashboard' | 'analyst'
+type Tab = 'cards' | 'rules' | 'portfolio' | 'dashboard' | 'analyst' | 'transactions'
 
 function App() {
   const [tab, setTab] = useState<Tab>('cards')
@@ -30,6 +31,7 @@ function App() {
       <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)}>
         <TabsList>
           <TabsTrigger value="cards">Cartões</TabsTrigger>
+          <TabsTrigger value="transactions">Transações</TabsTrigger>
           <TabsTrigger value="rules">Regras</TabsTrigger>
           <TabsTrigger value="portfolio">Carteira</TabsTrigger>
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
@@ -45,6 +47,10 @@ function App() {
               <VisionPreviewTable cardId={selectedCard.id} />
             </>
           )}
+        </TabsContent>
+
+        <TabsContent value="transactions">
+          <TransactionsPage />
         </TabsContent>
 
         <TabsContent value="rules">

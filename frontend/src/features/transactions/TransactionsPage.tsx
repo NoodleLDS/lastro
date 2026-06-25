@@ -1,0 +1,169 @@
+import { useMemo, useState } from 'react'
+import { MoneyValue } from '@/components/money-value'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { useCategories } from '@/features/categories/useCategories'
+import type { PeriodPreset } from './periodPresets'
+import { rangeForPreset } from './periodPresets'
+import { useTransactions } from './useTransactions'
+
+const ALL_CATEGORIES = 'all'
+
+export function TransactionsPage() {
+  const [search, setSearch] = useState('')
+  const [categoryId, setCategoryId] = useState<string>(ALL_CATEGORIES)
+  const [preset, setPreset] = useState<PeriodPreset>('this_month')
+  const [customFrom, setCustomFrom] = useState('')
+  const [customTo, setCustomTo] = useState('')
+
+  const { data: categories } = useCategories()
+
+  const { dateFrom, dateTo } = useMemo(() => {
+    if (preset === 'custom') {
+      return { dateFrom: customFrom || undefined, dateTo: customTo || undefined }
+    }
+    return rangeForPreset(preset)
+  }, [preset, customFrom, customTo])
+
+  const { data: transactions, isLoading } = useTransactions({
+    search,
+    categoryId: categoryId === ALL_CATEGORIES ? undefined : Number(categoryId),
+    dateFrom,
+    dateTo,
+  })
+
+  const categoryNameById = useMemo(() => {
+    const map = new Map<number, string>()
+    for (const category of categories ?? []) {
+      map.set(category.id, category.name)
+    }
+    return map
+  }, [categories])
+
+  return (
+    <div className="flex w-full flex-col gap-4">
+      <h2 className="text-lg font-semibold">Transações</h2>
+
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="flex flex-1 flex-col gap-1">
+          <label htmlFor="transactions-search" className="text-sm text-muted-foreground">
+            Buscar por descrição
+          </label>
+          <Input
+            id="transactions-search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="ex.: uber, mercado, netflix"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <span className="text-sm text-muted-foreground">Categoria</span>
+          <Select value={categoryId} onValueChange={setCategoryId}>
+            <SelectTrigger>
+              <SelectValue placeholder="todas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_CATEGORIES}>Todas</SelectItem>
+              {categories?.map((category) => (
+                <SelectItem key={category.id} value={String(category.id)}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <span className="text-sm text-muted-foreground">Período</span>
+          <Select value={preset} onValueChange={(value) => setPreset(value as PeriodPreset)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="this_month">Este mês</SelectItem>
+              <SelectItem value="last_month">Mês passado</SelectItem>
+              <SelectItem value="custom">Personalizado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {preset === 'custom' && (
+          <>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="transactions-date-from" className="text-sm text-muted-foreground">
+                De
+              </label>
+              <Input
+                id="transactions-date-from"
+                type="date"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="transactions-date-to" className="text-sm text-muted-foreground">
+                Até
+              </label>
+              <Input
+                id="transactions-date-to"
+                type="date"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+              />
+            </div>
+          </>
+        )}
+      </div>
+
+      {isLoading && <p className="text-muted-foreground">carregando...</p>}
+
+      {!isLoading && transactions && transactions.length === 0 && (
+        <p className="text-muted-foreground">nenhuma transação encontrada para esse filtro.</p>
+      )}
+
+      {transactions && transactions.length > 0 && (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Data</TableHead>
+              <TableHead>Descrição</TableHead>
+              <TableHead>Categoria</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {transactions.map((transaction) => (
+              <TableRow key={transaction.id}>
+                <TableCell className="tabular-nums">{transaction.date}</TableCell>
+                <TableCell>{transaction.description}</TableCell>
+                <TableCell>
+                  {transaction.category_id !== null
+                    ? (categoryNameById.get(transaction.category_id) ?? '—')
+                    : '—'}
+                </TableCell>
+                <TableCell className="text-right">
+                  <MoneyValue cents={transaction.amount_cents} className="justify-end" />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </div>
+  )
+}
