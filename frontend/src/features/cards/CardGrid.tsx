@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react'
+import { Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { CardContent, Card as CardPrimitive } from '@/components/ui/card'
@@ -37,31 +37,45 @@ export function CardGrid({ selectedCardId, onSelectCard }: CardGridProps) {
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
         {cards?.map((card) => (
-          <button
-            key={card.id}
-            type="button"
-            onClick={() => onSelectCard(card.id)}
-            onDoubleClick={() => {
-              setEditingCard(card)
-              setIsFormOpen(true)
-            }}
-          >
-            <CardPrimitive
-              className={cn(
-                'cursor-pointer border-2 transition-colors hover:border-primary',
-                selectedCardId === card.id ? 'border-primary' : 'border-border',
-              )}
+          <div key={card.id} className="group relative">
+            <button
+              type="button"
+              className="w-full"
+              onClick={() => onSelectCard(card.id)}
+              onDoubleClick={() => {
+                setEditingCard(card)
+                setIsFormOpen(true)
+              }}
             >
-              <CardContent className="flex flex-col items-center gap-2 py-4">
-                <div
-                  className="size-8 rounded-full"
-                  style={{ backgroundColor: card.color }}
-                  aria-hidden
-                />
-                <span className="text-sm font-medium">{card.name}</span>
-              </CardContent>
-            </CardPrimitive>
-          </button>
+              <CardPrimitive
+                className={cn(
+                  'cursor-pointer border-2 transition-colors hover:border-primary',
+                  selectedCardId === card.id ? 'border-primary' : 'border-border',
+                )}
+              >
+                <CardContent className="flex flex-col items-center gap-2 py-4">
+                  <div
+                    className="size-8 rounded-full"
+                    style={{ backgroundColor: card.color }}
+                    aria-hidden
+                  />
+                  <span className="text-sm font-medium">{card.name}</span>
+                </CardContent>
+              </CardPrimitive>
+            </button>
+            <button
+              type="button"
+              aria-label={`Editar ${card.name}`}
+              className="absolute top-1.5 right-1.5 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+              onClick={(event) => {
+                event.stopPropagation()
+                setEditingCard(card)
+                setIsFormOpen(true)
+              }}
+            >
+              <Pencil className="size-3.5" />
+            </button>
+          </div>
         ))}
       </div>
 
