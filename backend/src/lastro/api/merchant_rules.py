@@ -21,6 +21,15 @@ async def list_merchant_rules(
 async def create_merchant_rule(
     payload: MerchantRuleCreate, session: AsyncSession = Depends(get_session)
 ) -> MerchantRule:
+    statement = select(MerchantRule).where(
+        MerchantRule.pattern == payload.pattern, MerchantRule.is_active.is_(True)
+    )
+    existing = (await session.exec(statement)).first()
+    if existing is not None:
+        raise HTTPException(
+            status_code=422, detail="já existe uma regra ativa com esse pattern"
+        )
+
     rule = MerchantRule(**payload.model_dump())
     session.add(rule)
     await session.commit()
@@ -36,7 +45,23 @@ async def update_merchant_rule(
     if rule is None:
         raise HTTPException(status_code=404, detail="regra não encontrada")
 
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    updates = payload.model_dump(exclude_unset=True)
+    new_pattern = updates.get("pattern", rule.pattern)
+    new_is_active = updates.get("is_active", rule.is_active)
+
+    if new_is_active:
+        statement = select(MerchantRule).where(
+            MerchantRule.pattern == new_pattern,
+            MerchantRule.is_active.is_(True),
+            MerchantRule.id != rule_id,
+        )
+        existing = (await session.exec(statement)).first()
+        if existing is not None:
+            raise HTTPException(
+                status_code=422, detail="já existe uma regra ativa com esse pattern"
+            )
+
+    for field, value in updates.items():
         setattr(rule, field, value)
 
     session.add(rule)
