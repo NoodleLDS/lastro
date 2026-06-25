@@ -64,13 +64,32 @@ export function CardForm({ open, onOpenChange, card }: CardFormProps) {
               onChange={(e) => setColor(e.target.value)}
             />
           </div>
+          {(createCard.isError || updateCard.isError || deactivateCard.isError) && (
+            <p className="text-sm text-destructive">
+              {createCard.error?.message ??
+                updateCard.error?.message ??
+                deactivateCard.error?.message}
+            </p>
+          )}
+
           <DialogFooter>
             {card && (
-              <Button type="button" variant="destructive" onClick={handleDeactivate}>
-                Remover
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleDeactivate}
+                disabled={deactivateCard.isPending}
+              >
+                {deactivateCard.isPending ? 'Removendo...' : 'Remover'}
               </Button>
             )}
-            <Button type="submit">{card ? 'Salvar' : 'Criar'}</Button>
+            <Button type="submit" disabled={createCard.isPending || updateCard.isPending}>
+              {createCard.isPending || updateCard.isPending
+                ? 'Salvando...'
+                : card
+                  ? 'Salvar'
+                  : 'Criar'}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
