@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -25,7 +26,13 @@ async def list_cards(
 async def create_card(payload: CardCreate, session: AsyncSession = Depends(get_session)) -> Card:
     card = Card(**payload.model_dump())
     session.add(card)
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError as exc:
+        await session.rollback()
+        raise HTTPException(
+            status_code=409, detail="já existe um cartão com esse nome"
+        ) from exc
     await session.refresh(card)
     return card
 

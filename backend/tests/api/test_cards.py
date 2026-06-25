@@ -43,3 +43,13 @@ async def test_deactivate_card_is_soft_delete(client: AsyncClient) -> None:
 async def test_deactivate_card_not_found(client: AsyncClient) -> None:
     response = await client.delete("/cards/999")
     assert response.status_code == 404
+
+
+async def test_create_card_com_nome_duplicado_retorna_409_json(client: AsyncClient) -> None:
+    await client.post("/cards", json={"name": "Nubank"})
+
+    response = await client.post("/cards", json={"name": "Nubank"})
+
+    assert response.status_code == 409
+    body = response.json()
+    assert "detail" in body
