@@ -80,6 +80,14 @@ async def test_delete_transaction_not_found(client: AsyncClient) -> None:
     assert response.status_code == 404
 
 
+async def test_quick_entry_rejeita_card_id_inexistente(client: AsyncClient) -> None:
+    response = await client.post(
+        "/transactions/quick-entry",
+        json={"card_id": 9999, "raw": "zebu 22", "date": "2026-06-10"},
+    )
+    assert response.status_code == 422
+
+
 async def test_delete_transacao_raiz_parcelada_remove_parcelas_filhas_em_cascata(
     client: AsyncClient,
 ) -> None:

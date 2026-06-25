@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from lastro.core.fk import ensure_fk_exists
 from lastro.db import get_session
+from lastro.models.category import Category
 from lastro.models.merchant_rule import MerchantRule
 from lastro.schemas.merchant_rule import MerchantRuleCreate, MerchantRuleRead, MerchantRuleUpdate
 
@@ -21,6 +23,8 @@ async def list_merchant_rules(
 async def create_merchant_rule(
     payload: MerchantRuleCreate, session: AsyncSession = Depends(get_session)
 ) -> MerchantRule:
+    await ensure_fk_exists(session, Category, payload.category_id, "category_id")
+
     statement = select(MerchantRule).where(
         MerchantRule.pattern == payload.pattern, MerchantRule.is_active.is_(True)
     )
@@ -48,6 +52,9 @@ async def update_merchant_rule(
     updates = payload.model_dump(exclude_unset=True)
     new_pattern = updates.get("pattern", rule.pattern)
     new_is_active = updates.get("is_active", rule.is_active)
+
+    if "category_id" in updates:
+        await ensure_fk_exists(session, Category, updates["category_id"], "category_id")
 
     if new_is_active:
         statement = select(MerchantRule).where(

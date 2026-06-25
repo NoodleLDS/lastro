@@ -4,7 +4,9 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlmodel import func, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from lastro.core.fk import ensure_fk_exists
 from lastro.db import get_session
+from lastro.models.card import Card
 from lastro.models.category import Category
 from lastro.models.transaction import (
     CategorizedBy,
@@ -121,6 +123,8 @@ async def create_quick_entry(
     session: AsyncSession = Depends(get_session),
     categorization_llm: LLMProvider = Depends(get_ollama_provider),
 ) -> QuickEntryResult:
+    await ensure_fk_exists(session, Card, payload.card_id, "card_id")
+
     try:
         parsed = parse_quick_entry(payload.raw)
     except QuickEntryParseError as exc:
@@ -208,6 +212,8 @@ async def create_vision_preview(
     llm: LLMProvider = Depends(get_llm_provider),
     categorization_llm: LLMProvider = Depends(get_ollama_provider),
 ) -> list[Transaction]:
+    await ensure_fk_exists(session, Card, card_id, "card_id")
+
     image_bytes = await file.read()
     mime_type = file.content_type or "image/png"
 

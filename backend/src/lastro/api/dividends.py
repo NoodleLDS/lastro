@@ -2,8 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from lastro.core.fk import ensure_fk_exists
 from lastro.db import get_session
 from lastro.models.dividend import Dividend
+from lastro.models.position import Position
 from lastro.schemas.dividend import DividendCreate, DividendRead
 
 router = APIRouter(prefix="/dividends", tags=["dividends"])
@@ -25,6 +27,8 @@ async def list_dividends(
 async def create_dividend(
     payload: DividendCreate, session: AsyncSession = Depends(get_session)
 ) -> Dividend:
+    await ensure_fk_exists(session, Position, payload.position_id, "position_id")
+
     dividend = Dividend(**payload.model_dump())
     session.add(dividend)
     await session.commit()
