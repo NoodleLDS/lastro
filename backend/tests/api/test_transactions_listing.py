@@ -54,3 +54,43 @@ async def test_lista_inclui_parcelas_projetadas(client: AsyncClient) -> None:
     body = response.json()
     assert len(body) == 7
     assert sorted(t["installment_current"] for t in body) == [3, 4, 5, 6, 7, 8, 9]
+
+
+async def test_filtra_por_periodo_personalizado(client: AsyncClient) -> None:
+    card = await _create_card(client, "Nubank")
+    await _quick_entry(client, card["id"], "zebu 22", "2026-06-10")
+    await _quick_entry(client, card["id"], "posto 35", "2026-06-20")
+    await _quick_entry(client, card["id"], "ifood 50", "2026-07-05")
+
+    response = await client.get(
+        "/transactions",
+        params={"date_from": "2026-06-15", "date_to": "2026-06-30"},
+    )
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["description"] == "posto"
+
+
+async def test_filtra_por_busca_textual(client: AsyncClient) -> None:
+    card = await _create_card(client, "Nubank")
+    await _quick_entry(client, card["id"], "zebu 22", "2026-06-10")
+    await _quick_entry(client, card["id"], "posto 35", "2026-06-10")
+
+    response = await client.get("/transactions", params={"search": "ZEB"})
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["description"] == "zebu"
+
+
+async def test_filtra_por_categoria(client: AsyncClient) -> None:
+    card = await _create_card(client, "Nubank")
+    entry = await _quick_entry(client, card["id"], "zebu 22 #transporte", "2026-06-10")
+    await _quick_entry(client, card["id"], "posto 35", "2026-06-10")
+
+    category_id = entry["transaction"]["category_id"]
+    assert category_id is not None
+
+    response = await client.get("/transactions", params={"category_id": category_id})
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["description"] == "zebu"

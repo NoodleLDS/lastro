@@ -65,8 +65,12 @@ async def _resolve_category_id(
 @router.get("", response_model=list[TransactionRead])
 async def list_transactions(
     card_id: int | None = None,
+    category_id: int | None = None,
     year: int | None = None,
     month: int | None = None,
+    date_from: date_ | None = None,
+    date_to: date_ | None = None,
+    search: str | None = None,
     status: TransactionStatus = TransactionStatus.CONFIRMED,
     session: AsyncSession = Depends(get_session),
 ) -> list[Transaction]:
@@ -74,10 +78,20 @@ async def list_transactions(
 
     if card_id is not None:
         statement = statement.where(Transaction.card_id == card_id)
+    if category_id is not None:
+        statement = statement.where(Transaction.category_id == category_id)
     if year is not None:
         statement = statement.where(func.strftime("%Y", Transaction.date) == f"{year:04d}")
     if month is not None:
         statement = statement.where(func.strftime("%m", Transaction.date) == f"{month:02d}")
+    if date_from is not None:
+        statement = statement.where(Transaction.date >= date_from)
+    if date_to is not None:
+        statement = statement.where(Transaction.date <= date_to)
+    if search is not None and search.strip() != "":
+        statement = statement.where(
+            func.lower(Transaction.description).contains(search.strip().lower())
+        )
 
     statement = statement.order_by(Transaction.date)
     result = await session.exec(statement)
