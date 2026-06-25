@@ -54,13 +54,21 @@ export function PositionDetailPage({
 
       <div className="flex gap-4 text-sm text-muted-foreground">
         <span>Quantidade: {position.quantity}</span>
-        <span>Preço médio: {formatCents(position.average_price_cents)}</span>
+        <span className="tabular-nums">
+          Preço médio: {formatCents(position.average_price_cents)}
+        </span>
         {position.last_price_cents !== null && (
-          <span>Preço atual: {formatCents(position.last_price_cents)}</span>
+          <span className="tabular-nums">
+            Preço atual: {formatCents(position.last_price_cents)}
+          </span>
         )}
-        {position.price_earnings !== null && <span>P/L: {position.price_earnings.toFixed(2)}</span>}
+        {position.price_earnings !== null && (
+          <span className="tabular-nums">P/L: {position.price_earnings.toFixed(2)}</span>
+        )}
         {position.earnings_per_share !== null && (
-          <span>LPA: {formatCents(Math.round(position.earnings_per_share * 100))}</span>
+          <span className="tabular-nums">
+            LPA: {formatCents(Math.round(position.earnings_per_share * 100))}
+          </span>
         )}
       </div>
 
@@ -97,7 +105,7 @@ export function PositionDetailPage({
                   <TableHead>Data</TableHead>
                   <TableHead>Evento</TableHead>
                   <TableHead>Quantidade</TableHead>
-                  <TableHead>Preço/Valor</TableHead>
+                  <TableHead className="text-right">Preço/Valor</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -108,7 +116,7 @@ export function PositionDetailPage({
                     <TableCell>{event.date}</TableCell>
                     <TableCell>{EVENT_LABEL[event.type]}</TableCell>
                     <TableCell>{event.quantity ?? '—'}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-right tabular-nums">
                       {event.unit_price_cents !== null
                         ? formatCents(event.unit_price_cents)
                         : event.amount_cents !== null

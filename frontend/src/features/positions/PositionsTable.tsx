@@ -42,9 +42,9 @@ export function PositionsTable({
               <TableHead>Ticker</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead>Qtd</TableHead>
-              <TableHead>Preço médio</TableHead>
-              <TableHead>Preço atual</TableHead>
-              <TableHead>Total return</TableHead>
+              <TableHead className="text-right">Preço médio</TableHead>
+              <TableHead className="text-right">Preço atual</TableHead>
+              <TableHead className="text-right">Total return</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -57,15 +57,17 @@ export function PositionsTable({
                 <TableCell className="font-medium">{position.ticker}</TableCell>
                 <TableCell>{position.asset_type}</TableCell>
                 <TableCell>{position.quantity}</TableCell>
-                <TableCell>{formatCents(position.average_price_cents)}</TableCell>
-                <TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {formatCents(position.average_price_cents)}
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
                   {position.last_price_cents !== null
                     ? formatCents(position.last_price_cents)
                     : '—'}
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-right tabular-nums">
                   {position.total_return ? (
-                    <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-flex items-center justify-end gap-1.5">
                       <MoneyValue cents={position.total_return.total_return_cents} showArrow />
                       <span className="text-muted-foreground">
                         ({position.total_return.total_return_pct.toFixed(2)}%)
