@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AnalystChat } from '@/features/analyst/AnalystChat'
 import { CardGrid } from '@/features/cards/CardGrid'
 import { useCards } from '@/features/cards/useCards'
@@ -24,39 +24,19 @@ function App() {
   const selectedCard = cards?.find((c) => c.id === selectedCardId) ?? null
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-4xl flex-col gap-6 p-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Lastro</h1>
-        <nav className="flex gap-2">
-          <Button variant={tab === 'cards' ? 'default' : 'ghost'} onClick={() => setTab('cards')}>
-            Cartões
-          </Button>
-          <Button variant={tab === 'rules' ? 'default' : 'ghost'} onClick={() => setTab('rules')}>
-            Regras
-          </Button>
-          <Button
-            variant={tab === 'portfolio' ? 'default' : 'ghost'}
-            onClick={() => setTab('portfolio')}
-          >
-            Carteira
-          </Button>
-          <Button
-            variant={tab === 'dashboard' ? 'default' : 'ghost'}
-            onClick={() => setTab('dashboard')}
-          >
-            Dashboard
-          </Button>
-          <Button
-            variant={tab === 'analyst' ? 'default' : 'ghost'}
-            onClick={() => setTab('analyst')}
-          >
-            Analista
-          </Button>
-        </nav>
-      </div>
+    <main className="mx-auto flex min-h-svh max-w-7xl flex-col gap-6 p-8">
+      <h1 className="text-2xl font-semibold">Lastro</h1>
 
-      {tab === 'cards' && (
-        <div className="flex flex-col items-center gap-6">
+      <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)}>
+        <TabsList>
+          <TabsTrigger value="cards">Cartões</TabsTrigger>
+          <TabsTrigger value="rules">Regras</TabsTrigger>
+          <TabsTrigger value="portfolio">Carteira</TabsTrigger>
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="analyst">Analista</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="cards" className="flex flex-col gap-6">
           <CardGrid selectedCardId={selectedCardId} onSelectCard={setSelectedCardId} />
           {selectedCard && (
             <>
@@ -65,17 +45,13 @@ function App() {
               <VisionPreviewTable cardId={selectedCard.id} />
             </>
           )}
-        </div>
-      )}
+        </TabsContent>
 
-      {tab === 'rules' && (
-        <div className="flex flex-col items-center">
+        <TabsContent value="rules">
           <MerchantRulesPage />
-        </div>
-      )}
+        </TabsContent>
 
-      {tab === 'portfolio' && (
-        <div className="flex flex-col items-center gap-6">
+        <TabsContent value="portfolio" className="flex flex-col gap-6">
           {selectedPosition ? (
             <PositionDetailPage
               position={selectedPosition}
@@ -87,16 +63,16 @@ function App() {
               <PositionsTable onSelectPosition={setSelectedPosition} />
             </>
           )}
-        </div>
-      )}
+        </TabsContent>
 
-      {tab === 'dashboard' && <DashboardPage />}
+        <TabsContent value="dashboard">
+          <DashboardPage />
+        </TabsContent>
 
-      {tab === 'analyst' && (
-        <div className="flex flex-col items-center">
+        <TabsContent value="analyst">
           <AnalystChat />
-        </div>
-      )}
+        </TabsContent>
+      </Tabs>
     </main>
   )
 }
