@@ -3,6 +3,7 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from lastro.db import get_session
+from lastro.models.position import Position
 from lastro.models.sale import Sale
 from lastro.schemas.sale import SaleCreate, SaleRead
 from lastro.services.portfolio.price_history import record_price_point
@@ -25,6 +26,21 @@ async def list_sales(
 
 @router.post("", response_model=SaleRead, status_code=201)
 async def create_sale(payload: SaleCreate, session: AsyncSession = Depends(get_session)) -> Sale:
+    if payload.quantity <= 0:
+        raise HTTPException(status_code=422, detail="quantity deve ser maior que zero")
+
+    position = await session.get(Position, payload.position_id)
+    if position is None:
+        raise HTTPException(status_code=422, detail="position_id não encontrada")
+    if payload.quantity > position.quantity:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"quantity ({payload.quantity}) excede a quantidade atual da posição "
+                f"({position.quantity})"
+            ),
+        )
+
     sale = Sale(**payload.model_dump())
     session.add(sale)
     await apply_quantity_delta(session, payload.position_id, -payload.quantity)

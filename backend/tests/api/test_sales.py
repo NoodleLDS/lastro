@@ -73,3 +73,50 @@ async def test_list_sales_filtra_por_position_id(client: AsyncClient) -> None:
 async def test_delete_sale_not_found(client: AsyncClient) -> None:
     response = await client.delete("/sales/999")
     assert response.status_code == 404
+
+
+async def test_create_sale_rejeita_quantity_maior_que_posicao(client: AsyncClient) -> None:
+    position = await _create_position(client, quantity=25)
+
+    response = await client.post(
+        "/sales",
+        json={
+            "position_id": position["id"],
+            "date": "2026-02-01",
+            "quantity": 1000,
+            "unit_price_cents": 950,
+        },
+    )
+    assert response.status_code == 422
+
+    positions = (await client.get("/positions")).json()
+    assert positions[0]["quantity"] == 25
+
+
+async def test_create_sale_rejeita_quantity_zero_ou_negativa(client: AsyncClient) -> None:
+    position = await _create_position(client, quantity=25)
+
+    for quantity in (0, -5):
+        response = await client.post(
+            "/sales",
+            json={
+                "position_id": position["id"],
+                "date": "2026-02-01",
+                "quantity": quantity,
+                "unit_price_cents": 950,
+            },
+        )
+        assert response.status_code == 422
+
+
+async def test_create_sale_rejeita_position_id_inexistente(client: AsyncClient) -> None:
+    response = await client.post(
+        "/sales",
+        json={
+            "position_id": 9999,
+            "date": "2026-02-01",
+            "quantity": 1,
+            "unit_price_cents": 950,
+        },
+    )
+    assert response.status_code == 422
