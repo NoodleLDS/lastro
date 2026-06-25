@@ -1,16 +1,16 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CardCreate(BaseModel):
     name: str
     color: str = "#c084fc"
-    closing_day: int | None = None
+    closing_day: int | None = Field(default=None, ge=1, le=31)
 
 
 class CardUpdate(BaseModel):
     name: str | None = None
     color: str | None = None
-    closing_day: int | None = None
+    closing_day: int | None = Field(default=None, ge=1, le=31)
     is_active: bool | None = None
 
 

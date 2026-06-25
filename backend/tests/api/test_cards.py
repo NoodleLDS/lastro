@@ -53,3 +53,26 @@ async def test_create_card_com_nome_duplicado_retorna_409_json(client: AsyncClie
     assert response.status_code == 409
     body = response.json()
     assert "detail" in body
+
+
+async def test_create_card_rejeita_closing_day_fora_do_range(client: AsyncClient) -> None:
+    for closing_day in (0, 35, -5):
+        response = await client.post(
+            "/cards", json={"name": f"Card{closing_day}", "closing_day": closing_day}
+        )
+        assert response.status_code == 422
+
+
+async def test_create_card_aceita_closing_day_nos_limites(client: AsyncClient) -> None:
+    response = await client.post("/cards", json={"name": "Nubank", "closing_day": 1})
+    assert response.status_code == 201
+
+    response = await client.post("/cards", json={"name": "Inter", "closing_day": 31})
+    assert response.status_code == 201
+
+
+async def test_update_card_rejeita_closing_day_fora_do_range(client: AsyncClient) -> None:
+    created = (await client.post("/cards", json={"name": "Inter"})).json()
+
+    response = await client.put(f"/cards/{created['id']}", json={"closing_day": 35})
+    assert response.status_code == 422

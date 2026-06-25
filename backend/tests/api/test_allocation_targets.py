@@ -34,3 +34,43 @@ async def test_update_allocation_target_not_found(client: AsyncClient) -> None:
 async def test_delete_allocation_target_not_found(client: AsyncClient) -> None:
     response = await client.delete("/allocation-targets/999")
     assert response.status_code == 404
+
+
+async def test_create_allocation_target_rejeita_percentage_fora_do_range(
+    client: AsyncClient,
+) -> None:
+    for target_percentage in (-10, 500):
+        response = await client.post(
+            "/allocation-targets",
+            json={"asset_type": "stock", "target_percentage": target_percentage},
+        )
+        assert response.status_code == 422
+
+
+async def test_create_allocation_target_aceita_percentage_nos_limites(
+    client: AsyncClient,
+) -> None:
+    response = await client.post(
+        "/allocation-targets", json={"asset_type": "stock", "target_percentage": 0}
+    )
+    assert response.status_code == 201
+
+    response = await client.post(
+        "/allocation-targets", json={"asset_type": "fii", "target_percentage": 100}
+    )
+    assert response.status_code == 201
+
+
+async def test_update_allocation_target_rejeita_percentage_fora_do_range(
+    client: AsyncClient,
+) -> None:
+    created = (
+        await client.post(
+            "/allocation-targets", json={"asset_type": "stock", "target_percentage": 30.0}
+        )
+    ).json()
+
+    response = await client.put(
+        f"/allocation-targets/{created['id']}", json={"target_percentage": -1}
+    )
+    assert response.status_code == 422
