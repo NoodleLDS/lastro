@@ -1,0 +1,33 @@
+# Python / uv
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# SQLite
+*.db
+*.db-journal
+backend/db/
+
+# Node / pnpm
+node_modules/
+dist/
+.vite/
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+
+# Claude Code local project state
+.claude/
+
+# Dados financeiros pessoais brutos (scratch da planilha, nao versionar)
+backend/picpay.txt
+backend/sheetnames.txt
