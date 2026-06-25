@@ -4,6 +4,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from lastro.db import get_session
 from lastro.models.contribution import Contribution
+from lastro.models.position import Position
 from lastro.schemas.contribution import (
     ContributionCreate,
     ContributionRead,
@@ -41,6 +42,15 @@ async def list_contributions(
 async def create_contribution(
     payload: ContributionCreate, session: AsyncSession = Depends(get_session)
 ) -> Contribution:
+    if payload.quantity <= 0:
+        raise HTTPException(status_code=422, detail="quantity deve ser maior que zero")
+    if payload.unit_price_cents <= 0:
+        raise HTTPException(status_code=422, detail="unit_price_cents deve ser maior que zero")
+
+    position = await session.get(Position, payload.position_id)
+    if position is None:
+        raise HTTPException(status_code=422, detail="position_id não encontrada")
+
     contribution = Contribution(**payload.model_dump())
     session.add(contribution)
     await apply_quantity_delta(session, payload.position_id, payload.quantity)

@@ -65,3 +65,49 @@ async def test_distribute_rejeita_valor_nao_positivo(client: AsyncClient) -> Non
     response = await client.post("/contributions/distribute", json={"total_cents": 0})
 
     assert response.status_code == 422
+
+
+async def test_create_contribution_rejeita_quantity_negativa(client: AsyncClient) -> None:
+    position = await _create_position(client)
+
+    response = await client.post(
+        "/contributions",
+        json={
+            "position_id": position["id"],
+            "date": "2026-01-01",
+            "quantity": -10,
+            "unit_price_cents": 1800,
+        },
+    )
+    assert response.status_code == 422
+
+
+async def test_create_contribution_rejeita_unit_price_cents_nao_positivo(
+    client: AsyncClient,
+) -> None:
+    position = await _create_position(client)
+
+    for unit_price_cents in (0, -100):
+        response = await client.post(
+            "/contributions",
+            json={
+                "position_id": position["id"],
+                "date": "2026-01-01",
+                "quantity": 10,
+                "unit_price_cents": unit_price_cents,
+            },
+        )
+        assert response.status_code == 422
+
+
+async def test_create_contribution_rejeita_position_id_inexistente(client: AsyncClient) -> None:
+    response = await client.post(
+        "/contributions",
+        json={
+            "position_id": 9999,
+            "date": "2026-01-01",
+            "quantity": 10,
+            "unit_price_cents": 1800,
+        },
+    )
+    assert response.status_code == 422
