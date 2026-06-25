@@ -2,6 +2,7 @@ from httpx import AsyncClient
 
 from lastro.main import app
 from lastro.services.llm.dependency import get_ollama_provider
+from lastro.services.llm.ollama import OllamaProvider
 from lastro.services.llm.provider import VisionExtractedItem
 from tests.conftest import NullCategorizationProvider
 
@@ -51,4 +52,41 @@ async def test_quick_entry_sem_categoria_quando_llm_nao_decide(client: AsyncClie
         )
     ).json()
 
+    assert created["transaction"]["category_id"] is None
+
+
+class _OfflineOllamaCategorizeOnly(OllamaProvider):
+    """Simula o comportamento do OllamaProvider real quando o Ollama está fora
+    do ar: categorize() captura a falha de conexão internamente e retorna
+    None (ver OllamaProvider.categorize), sem propagar excessão pro chamador.
+    Aqui simulamos sem tocar no httpx global, que também é usado pelo client
+    de teste via ASGITransport."""
+
+    async def categorize(self, description: str, category_names: list[str]) -> str | None:
+        return None
+
+
+async def test_quick_entry_sem_categoria_quando_ollama_esta_fora_do_ar(
+    client: AsyncClient,
+) -> None:
+    """Determinístico > IA: se o Ollama está indisponível, não há regra de
+    merchant e nenhuma categoria explícita, a transação fica sem categoria
+    (CategorizedBy.NONE) em vez de propagar um 500 cru pro cliente."""
+    card = (await client.post("/cards", json={"name": "Nubank"})).json()
+    await client.post("/categories", json={"name": "Alimentação"})
+
+    app.dependency_overrides[get_ollama_provider] = lambda: _OfflineOllamaCategorizeOnly(
+        base_url="http://ollama.local", model="llama3.2:3b"
+    )
+
+    try:
+        response = await client.post(
+            "/transactions/quick-entry",
+            json={"card_id": card["id"], "raw": "mercado xyz 22", "date": "2026-06-10"},
+        )
+    finally:
+        app.dependency_overrides[get_ollama_provider] = lambda: NullCategorizationProvider()
+
+    assert response.status_code == 201
+    created = response.json()
     assert created["transaction"]["category_id"] is None

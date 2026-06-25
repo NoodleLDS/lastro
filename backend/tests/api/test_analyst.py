@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from httpx import AsyncClient
 
 from lastro.main import app
@@ -43,3 +44,27 @@ async def test_ask_analyst_rejeita_pergunta_vazia(client: AsyncClient) -> None:
     response = await client.post("/analyst/ask", json={"question": "   "})
 
     assert response.status_code == 422
+
+
+class _OfflineLLM:
+    async def vision(self, image_bytes: bytes, mime_type: str) -> list[VisionExtractedItem]:
+        raise NotImplementedError
+
+    async def categorize(self, description: str, category_names: list[str]) -> str | None:
+        return None
+
+    async def complete(self, system_prompt: str, user_message: str) -> str:
+        raise HTTPException(
+            status_code=503, detail="Serviço de IA (Ollama) indisponível."
+        )
+
+
+async def test_ask_analyst_retorna_503_quando_ollama_indisponivel(client: AsyncClient) -> None:
+    app.dependency_overrides[get_ollama_provider] = lambda: _OfflineLLM()
+    try:
+        response = await client.post("/analyst/ask", json={"question": "Devo vender BBAS3?"})
+    finally:
+        app.dependency_overrides[get_ollama_provider] = lambda: NullCategorizationProvider()
+
+    assert response.status_code == 503
+    assert "detail" in response.json()

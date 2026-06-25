@@ -1,8 +1,12 @@
 import json
 
 import httpx
+import structlog
+from fastapi import HTTPException
 
 from lastro.services.llm.provider import VisionExtractedItem
+
+logger = structlog.get_logger()
 
 _CATEGORIZE_SCHEMA = {
     "type": "object",
@@ -11,6 +15,11 @@ _CATEGORIZE_SCHEMA = {
     },
     "required": ["category"],
 }
+
+_OLLAMA_UNAVAILABLE_DETAIL = (
+    "Serviço de IA (Ollama) indisponível. Verifique se está rodando e com o "
+    "modelo configurado disponível (`ollama pull <modelo>`)."
+)
 
 
 class OllamaProvider:
@@ -34,18 +43,22 @@ class OllamaProvider:
             "Responda apenas com o nome exato de uma das categorias acima."
         )
 
-        async with httpx.AsyncClient(timeout=30) as client:
-            response = await client.post(
-                f"{self._base_url}/api/chat",
-                json={
-                    "model": self._model,
-                    "messages": [{"role": "user", "content": prompt}],
-                    "format": _CATEGORIZE_SCHEMA,
-                    "stream": False,
-                },
-            )
-            response.raise_for_status()
-            body = response.json()
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                response = await client.post(
+                    f"{self._base_url}/api/chat",
+                    json={
+                        "model": self._model,
+                        "messages": [{"role": "user", "content": prompt}],
+                        "format": _CATEGORIZE_SCHEMA,
+                        "stream": False,
+                    },
+                )
+                response.raise_for_status()
+                body = response.json()
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError) as exc:
+            logger.warning("ollama_categorize_indisponivel", error=str(exc))
+            return None
 
         content = body["message"]["content"]
         category = _parse_category(content)
@@ -54,20 +67,26 @@ class OllamaProvider:
         return category
 
     async def complete(self, system_prompt: str, user_message: str) -> str:
-        async with httpx.AsyncClient(timeout=60) as client:
-            response = await client.post(
-                f"{self._base_url}/api/chat",
-                json={
-                    "model": self._model,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_message},
-                    ],
-                    "stream": False,
-                },
-            )
-            response.raise_for_status()
-            body = response.json()
+        try:
+            async with httpx.AsyncClient(timeout=150) as client:
+                response = await client.post(
+                    f"{self._base_url}/api/chat",
+                    json={
+                        "model": self._model,
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_message},
+                        ],
+                        "stream": False,
+                    },
+                )
+                response.raise_for_status()
+                body = response.json()
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError) as exc:
+            logger.warning("ollama_complete_indisponivel", error=str(exc))
+            raise HTTPException(
+                status_code=503, detail=_OLLAMA_UNAVAILABLE_DETAIL
+            ) from exc
 
         return body["message"]["content"]
 
