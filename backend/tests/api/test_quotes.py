@@ -1,6 +1,7 @@
 import pytest
 from httpx import AsyncClient
 
+from lastro.core.config import settings
 from lastro.services.quotes.provider import Quote
 
 
@@ -79,7 +80,10 @@ async def test_refresh_quotes_pula_renda_fixa(
     assert response.json()[0]["last_price_cents"] is None
 
 
-async def test_refresh_quotes_sem_token_retorna_400(client: AsyncClient) -> None:
+async def test_refresh_quotes_sem_token_retorna_400(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(settings, "brapi_token", None)
     await _create_position(client)
 
     response = await client.post("/positions/refresh-quotes")
