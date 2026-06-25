@@ -4,11 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { formatCents } from '@/lib/format'
 import { useFireSimulator } from './useFireSimulator'
-
-function formatCents(cents: number): string {
-  return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
 
 export function FireSimulator() {
   const [targetExpense, setTargetExpense] = useState('3000')
@@ -59,7 +56,7 @@ export function FireSimulator() {
               </span>
             </p>
             {fireSimulator.data.has_reached_target ? (
-              <p className="text-primary">Você já atingiu o gasto-alvo com esse patrimônio.</p>
+              <p className="text-success">Você já atingiu o gasto-alvo com esse patrimônio.</p>
             ) : (
               fireSimulator.data.missing_portfolio_cents !== null && (
                 <p className="text-muted-foreground">

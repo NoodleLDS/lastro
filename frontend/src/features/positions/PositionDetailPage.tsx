@@ -17,12 +17,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { formatCents } from '@/lib/format'
 import { usePositionHistory } from './usePositionHistory'
 import type { Position } from './usePositions'
-
-function formatCents(cents: number): string {
-  return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
 
 const EVENT_LABEL: Record<string, string> = {
   contribution: 'Compra',
@@ -45,7 +42,7 @@ export function PositionDetailPage({
   }))
 
   return (
-    <div className="flex w-full max-w-4xl flex-col gap-4">
+    <div className="flex w-full flex-col gap-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">
           {position.ticker} — {position.name}

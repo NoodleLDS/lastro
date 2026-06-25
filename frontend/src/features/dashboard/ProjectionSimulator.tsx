@@ -4,11 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { formatCents } from '@/lib/format'
 import { useProjection } from './useProjection'
-
-function formatCents(cents: number): string {
-  return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
 
 export function ProjectionSimulator() {
   const [monthlyContribution, setMonthlyContribution] = useState('3200')

@@ -9,12 +9,10 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { PercentValue } from '@/components/money-value'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { formatCents } from '@/lib/format'
 import { useEvolution } from './useEvolution'
-
-function formatCents(cents: number): string {
-  return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
 
 function CountUpValue({ cents }: { cents: number }) {
   const value = useMotionValue(0)
@@ -63,11 +61,17 @@ export function EvolutionChart() {
         </ResponsiveContainer>
 
         {data.comparison && (
-          <div className="flex gap-4 text-sm text-muted-foreground">
-            <span>Carteira: {data.comparison.portfolio_return_pct.toFixed(2)}%</span>
-            <span>CDI: {data.comparison.cdi_return_pct.toFixed(2)}%</span>
+          <div className="flex gap-4 text-sm">
+            <span className="text-muted-foreground">
+              Carteira: <PercentValue value={data.comparison.portfolio_return_pct} digits={2} />
+            </span>
+            <span className="text-muted-foreground">
+              CDI: <PercentValue value={data.comparison.cdi_return_pct} digits={2} />
+            </span>
             {data.comparison.ivvb11_return_pct !== null && (
-              <span>IVVB11: {data.comparison.ivvb11_return_pct.toFixed(2)}%</span>
+              <span className="text-muted-foreground">
+                IVVB11: <PercentValue value={data.comparison.ivvb11_return_pct} digits={2} />
+              </span>
             )}
           </div>
         )}
