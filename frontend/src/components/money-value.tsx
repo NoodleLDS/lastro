@@ -25,7 +25,9 @@ export function MoneyValue({ cents, showArrow = false, className }: MoneyValuePr
   const Arrow = ArrowBySign[sign]
 
   return (
-    <span className={cn('inline-flex items-center gap-0.5', colorBySign[sign], className)}>
+    <span
+      className={cn('inline-flex items-center gap-0.5 tabular-nums', colorBySign[sign], className)}
+    >
       {showArrow && Arrow && <Arrow className="size-3.5" />}
       {formatCents(cents)}
     </span>
@@ -44,7 +46,9 @@ export function PercentValue({ value, showArrow = false, digits = 1, className }
   const Arrow = ArrowBySign[sign]
 
   return (
-    <span className={cn('inline-flex items-center gap-0.5', colorBySign[sign], className)}>
+    <span
+      className={cn('inline-flex items-center gap-0.5 tabular-nums', colorBySign[sign], className)}
+    >
       {showArrow && Arrow && <Arrow className="size-3.5" />}
       {formatPercent(value, digits)}
     </span>
