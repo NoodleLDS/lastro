@@ -1,3 +1,4 @@
+import { MoneyValue } from '@/components/money-value'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -7,12 +8,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { formatCents } from '@/lib/format'
 import type { Position } from './usePositions'
 import { usePositions, useRefreshQuotes } from './usePositions'
-
-function formatCents(cents: number): string {
-  return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
 
 export function PositionsTable({
   onSelectPosition,
@@ -66,9 +64,16 @@ export function PositionsTable({
                     : '—'}
                 </TableCell>
                 <TableCell>
-                  {position.total_return
-                    ? `${formatCents(position.total_return.total_return_cents)} (${position.total_return.total_return_pct.toFixed(2)}%)`
-                    : '—'}
+                  {position.total_return ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <MoneyValue cents={position.total_return.total_return_cents} showArrow />
+                      <span className="text-muted-foreground">
+                        ({position.total_return.total_return_pct.toFixed(2)}%)
+                      </span>
+                    </span>
+                  ) : (
+                    '—'
+                  )}
                 </TableCell>
               </TableRow>
             ))}
