@@ -33,7 +33,10 @@ export function useCreateFixedExpense() {
       month: number
       category_id?: number
     }) => fixedExpenseSchema.parse(await apiPost('/fixed-expenses', input)),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['fixed-expenses'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fixed-expenses'] })
+      queryClient.invalidateQueries({ queryKey: ['monthly-summary'] })
+    },
   })
 }
 
@@ -49,7 +52,10 @@ export function useUpdateFixedExpense() {
       amount_cents?: number
       category_id?: number
     }) => fixedExpenseSchema.parse(await apiPatch(`/fixed-expenses/${id}`, input)),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['fixed-expenses'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fixed-expenses'] })
+      queryClient.invalidateQueries({ queryKey: ['monthly-summary'] })
+    },
   })
 }
 
@@ -57,6 +63,9 @@ export function useDeleteFixedExpense() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: number) => apiDelete(`/fixed-expenses/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['fixed-expenses'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fixed-expenses'] })
+      queryClient.invalidateQueries({ queryKey: ['monthly-summary'] })
+    },
   })
 }

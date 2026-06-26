@@ -30,7 +30,10 @@ export function useCreateIncome() {
       year: number
       month: number
     }) => incomeSchema.parse(await apiPost('/incomes', input)),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['incomes'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['incomes'] })
+      queryClient.invalidateQueries({ queryKey: ['monthly-summary'] })
+    },
   })
 }
 
@@ -45,7 +48,10 @@ export function useUpdateIncome() {
       description?: string
       amount_cents?: number
     }) => incomeSchema.parse(await apiPatch(`/incomes/${id}`, input)),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['incomes'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['incomes'] })
+      queryClient.invalidateQueries({ queryKey: ['monthly-summary'] })
+    },
   })
 }
 
@@ -53,6 +59,9 @@ export function useDeleteIncome() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: number) => apiDelete(`/incomes/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['incomes'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['incomes'] })
+      queryClient.invalidateQueries({ queryKey: ['monthly-summary'] })
+    },
   })
 }

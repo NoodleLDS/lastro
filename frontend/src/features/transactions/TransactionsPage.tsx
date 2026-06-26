@@ -20,6 +20,8 @@ import {
 import { useCategories } from '@/features/categories/useCategories'
 import type { PeriodPreset } from './periodPresets'
 import { rangeForPreset } from './periodPresets'
+import { TransactionEditDialog } from './TransactionEditDialog'
+import type { Transaction } from './useTransactions'
 import { useTransactions } from './useTransactions'
 
 const ALL_CATEGORIES = 'all'
@@ -30,6 +32,7 @@ export function TransactionsPage() {
   const [preset, setPreset] = useState<PeriodPreset>('this_month')
   const [customFrom, setCustomFrom] = useState('')
   const [customTo, setCustomTo] = useState('')
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
 
   const { data: categories } = useCategories()
 
@@ -157,7 +160,11 @@ export function TransactionsPage() {
             </TableHeader>
             <TableBody>
               {transactions.map((transaction) => (
-                <TableRow key={transaction.id}>
+                <TableRow
+                  key={transaction.id}
+                  className="cursor-pointer"
+                  onClick={() => setEditingTransaction(transaction)}
+                >
                   <TableCell className="tabular-nums">{transaction.date}</TableCell>
                   <TableCell>{transaction.description}</TableCell>
                   <TableCell>
@@ -175,9 +182,11 @@ export function TransactionsPage() {
 
           <div className="flex flex-col gap-2 md:hidden">
             {transactions.map((transaction) => (
-              <div
+              <button
+                type="button"
                 key={transaction.id}
-                className="flex flex-col gap-1 rounded-lg border border-border p-3"
+                className="flex flex-col gap-1 rounded-lg border border-border p-3 text-left"
+                onClick={() => setEditingTransaction(transaction)}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium">{transaction.description}</span>
@@ -191,11 +200,19 @@ export function TransactionsPage() {
                       : '—'}
                   </span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </>
       )}
+
+      <TransactionEditDialog
+        open={editingTransaction !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingTransaction(null)
+        }}
+        transaction={editingTransaction}
+      />
     </div>
   )
 }

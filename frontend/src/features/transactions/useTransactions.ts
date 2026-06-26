@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
-import { apiGet } from '@/lib/api'
+import { apiDelete, apiGet, apiPatch } from '@/lib/api'
 
 const transactionSchema = z.object({
   id: z.number(),
@@ -55,5 +55,30 @@ export function useTransactions(filters: TransactionFilters = {}) {
     queryKey: ['transactions', filters],
     queryFn: async () =>
       transactionsSchema.parse(await apiGet(`/transactions${buildQueryString(filters)}`)),
+  })
+}
+
+export function useUpdateTransaction() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      id,
+      ...input
+    }: {
+      id: number
+      description?: string
+      amount_cents?: number
+      category_id?: number
+      date?: string
+    }) => transactionSchema.parse(await apiPatch(`/transactions/${id}`, input)),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+  })
+}
+
+export function useDeleteTransaction() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: number) => apiDelete(`/transactions/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['transactions'] }),
   })
 }

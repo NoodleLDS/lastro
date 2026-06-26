@@ -33,7 +33,10 @@ export function useCreateVariableExpense() {
       month: number
       category_id?: number
     }) => variableExpenseSchema.parse(await apiPost('/variable-expenses', input)),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['variable-expenses'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['variable-expenses'] })
+      queryClient.invalidateQueries({ queryKey: ['monthly-summary'] })
+    },
   })
 }
 
@@ -49,7 +52,10 @@ export function useUpdateVariableExpense() {
       amount_cents?: number
       category_id?: number
     }) => variableExpenseSchema.parse(await apiPatch(`/variable-expenses/${id}`, input)),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['variable-expenses'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['variable-expenses'] })
+      queryClient.invalidateQueries({ queryKey: ['monthly-summary'] })
+    },
   })
 }
 
@@ -57,6 +63,9 @@ export function useDeleteVariableExpense() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: number) => apiDelete(`/variable-expenses/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['variable-expenses'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['variable-expenses'] })
+      queryClient.invalidateQueries({ queryKey: ['monthly-summary'] })
+    },
   })
 }
