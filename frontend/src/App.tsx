@@ -1,4 +1,11 @@
 import { useState } from 'react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AnalystChat } from '@/features/analyst/AnalystChat'
 import { CardGrid } from '@/features/cards/CardGrid'
@@ -12,9 +19,12 @@ import { PositionDetailPage } from '@/features/positions/PositionDetailPage'
 import { PositionsTable } from '@/features/positions/PositionsTable'
 import type { Position } from '@/features/positions/usePositions'
 import { QuickEntryInput } from '@/features/quick-entry/QuickEntryInput'
+import { ReportsPage } from '@/features/reports/ReportsPage'
 import { TransactionsPage } from '@/features/transactions/TransactionsPage'
 import { VisionPreviewTable } from '@/features/vision-preview/VisionPreviewTable'
 import { VisionUpload } from '@/features/vision-preview/VisionUpload'
+import { useTheme } from '@/lib/theme-context'
+import { THEME_LABELS, type ThemeName } from '@/lib/themes'
 
 type Tab =
   | 'cards'
@@ -24,25 +34,42 @@ type Tab =
   | 'analyst'
   | 'transactions'
   | 'monthly-summary'
+  | 'reports'
 
 function App() {
   const [tab, setTab] = useState<Tab>('cards')
   const [selectedCardId, setSelectedCardId] = useState<number | null>(null)
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null)
   const { data: cards } = useCards()
+  const { theme, setTheme } = useTheme()
 
   const selectedCard = cards?.find((c) => c.id === selectedCardId) ?? null
 
   return (
     <main className="mx-auto flex min-h-svh max-w-7xl flex-col gap-8 p-8">
-      <header className="flex items-center gap-3">
-        <span className="flex size-9 items-center justify-center rounded-xl bg-primary font-semibold text-primary-foreground">
-          L
-        </span>
-        <div>
-          <h1 className="text-xl font-semibold leading-tight">Lastro</h1>
-          <p className="text-xs text-muted-foreground">gestão financeira e patrimônio</p>
+      <header className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="flex size-9 items-center justify-center rounded-xl bg-primary font-semibold text-primary-foreground">
+            L
+          </span>
+          <div>
+            <h1 className="text-xl font-semibold leading-tight">Lastro</h1>
+            <p className="text-xs text-muted-foreground">gestão financeira e patrimônio</p>
+          </div>
         </div>
+
+        <Select value={theme} onValueChange={(value) => setTheme(value as ThemeName)}>
+          <SelectTrigger className="w-40" aria-label="Modelos">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(THEME_LABELS).map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </header>
 
       <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)}>
@@ -50,6 +77,7 @@ function App() {
           <TabsTrigger value="cards">Cartões</TabsTrigger>
           <TabsTrigger value="transactions">Transações</TabsTrigger>
           <TabsTrigger value="monthly-summary">Resumo mensal</TabsTrigger>
+          <TabsTrigger value="reports">Relatórios</TabsTrigger>
           <TabsTrigger value="rules">Regras</TabsTrigger>
           <TabsTrigger value="portfolio">Carteira</TabsTrigger>
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
@@ -74,6 +102,10 @@ function App() {
 
         <TabsContent value="monthly-summary">
           <MonthlySummaryPage />
+        </TabsContent>
+
+        <TabsContent value="reports">
+          <ReportsPage />
         </TabsContent>
 
         <TabsContent value="rules">
