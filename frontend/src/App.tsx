@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AnalystChat } from '@/features/analyst/AnalystChat'
 import { CardGrid } from '@/features/cards/CardGrid'
+import { CardMonthSpending } from '@/features/cards/CardMonthSpending'
 import { useCards } from '@/features/cards/useCards'
 import { ContributionForm } from '@/features/contributions/ContributionForm'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
@@ -33,8 +34,16 @@ function App() {
   const selectedCard = cards?.find((c) => c.id === selectedCardId) ?? null
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-7xl flex-col gap-6 p-8">
-      <h1 className="text-2xl font-semibold">Lastro</h1>
+    <main className="mx-auto flex min-h-svh max-w-7xl flex-col gap-8 p-8">
+      <header className="flex items-center gap-3">
+        <span className="flex size-9 items-center justify-center rounded-xl bg-primary font-semibold text-primary-foreground">
+          L
+        </span>
+        <div>
+          <h1 className="text-xl font-semibold leading-tight">Lastro</h1>
+          <p className="text-xs text-muted-foreground">gestão financeira e patrimônio</p>
+        </div>
+      </header>
 
       <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)}>
         <TabsList>
@@ -54,6 +63,7 @@ function App() {
               <QuickEntryInput cardId={selectedCard.id} cardName={selectedCard.name} />
               <VisionUpload cardId={selectedCard.id} />
               <VisionPreviewTable cardId={selectedCard.id} />
+              <CardMonthSpending cardId={selectedCard.id} />
             </>
           )}
         </TabsContent>
@@ -88,7 +98,7 @@ function App() {
           <DashboardPage />
         </TabsContent>
 
-        <TabsContent value="analyst">
+        <TabsContent value="analyst" className="flex justify-center">
           <AnalystChat />
         </TabsContent>
       </Tabs>

@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useCards } from '@/features/cards/useCards'
 import { useCategories } from '@/features/categories/useCategories'
 import type { PeriodPreset } from './periodPresets'
 import { rangeForPreset } from './periodPresets'
@@ -35,6 +36,7 @@ export function TransactionsPage() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
 
   const { data: categories } = useCategories()
+  const { data: cards } = useCards()
 
   const { dateFrom, dateTo } = useMemo(() => {
     if (preset === 'custom') {
@@ -57,6 +59,14 @@ export function TransactionsPage() {
     }
     return map
   }, [categories])
+
+  const cardById = useMemo(() => {
+    const map = new Map<number, { name: string; color: string }>()
+    for (const card of cards ?? []) {
+      map.set(card.id, { name: card.name, color: card.color })
+    }
+    return map
+  }, [cards])
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -154,54 +164,83 @@ export function TransactionsPage() {
               <TableRow>
                 <TableHead>Data</TableHead>
                 <TableHead>Descrição</TableHead>
+                <TableHead>Cartão</TableHead>
                 <TableHead>Categoria</TableHead>
                 <TableHead className="text-right">Valor</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transactions.map((transaction) => (
-                <TableRow
-                  key={transaction.id}
-                  className="cursor-pointer"
-                  onClick={() => setEditingTransaction(transaction)}
-                >
-                  <TableCell className="tabular-nums">{transaction.date}</TableCell>
-                  <TableCell>{transaction.description}</TableCell>
-                  <TableCell>
-                    {transaction.category_id !== null
-                      ? (categoryNameById.get(transaction.category_id) ?? '—')
-                      : '—'}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <MoneyValue cents={transaction.amount_cents} className="justify-end" />
-                  </TableCell>
-                </TableRow>
-              ))}
+              {transactions.map((transaction) => {
+                const card = cardById.get(transaction.card_id)
+                return (
+                  <TableRow
+                    key={transaction.id}
+                    className="cursor-pointer"
+                    onClick={() => setEditingTransaction(transaction)}
+                  >
+                    <TableCell className="tabular-nums">{transaction.date}</TableCell>
+                    <TableCell>{transaction.description}</TableCell>
+                    <TableCell>
+                      {card && (
+                        <span className="inline-flex items-center gap-1.5">
+                          <span
+                            className="size-2 rounded-full"
+                            style={{ backgroundColor: card.color }}
+                            aria-hidden
+                          />
+                          {card.name}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {transaction.category_id !== null
+                        ? (categoryNameById.get(transaction.category_id) ?? '—')
+                        : '—'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <MoneyValue cents={transaction.amount_cents} className="justify-end" />
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
 
           <div className="flex flex-col gap-2 md:hidden">
-            {transactions.map((transaction) => (
-              <button
-                type="button"
-                key={transaction.id}
-                className="flex flex-col gap-1 rounded-lg border border-border p-3 text-left"
-                onClick={() => setEditingTransaction(transaction)}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{transaction.description}</span>
-                  <MoneyValue cents={transaction.amount_cents} />
-                </div>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span className="tabular-nums">{transaction.date}</span>
-                  <span>
-                    {transaction.category_id !== null
-                      ? (categoryNameById.get(transaction.category_id) ?? '—')
-                      : '—'}
-                  </span>
-                </div>
-              </button>
-            ))}
+            {transactions.map((transaction) => {
+              const card = cardById.get(transaction.card_id)
+              return (
+                <button
+                  type="button"
+                  key={transaction.id}
+                  className="flex flex-col gap-1 rounded-lg border border-border p-3 text-left"
+                  onClick={() => setEditingTransaction(transaction)}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{transaction.description}</span>
+                    <MoneyValue cents={transaction.amount_cents} />
+                  </div>
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span className="tabular-nums">{transaction.date}</span>
+                    <span className="flex items-center gap-2">
+                      {card && (
+                        <span className="inline-flex items-center gap-1.5">
+                          <span
+                            className="size-2 rounded-full"
+                            style={{ backgroundColor: card.color }}
+                            aria-hidden
+                          />
+                          {card.name}
+                        </span>
+                      )}
+                      {transaction.category_id !== null
+                        ? (categoryNameById.get(transaction.category_id) ?? '—')
+                        : '—'}
+                    </span>
+                  </div>
+                </button>
+              )
+            })}
           </div>
         </>
       )}
