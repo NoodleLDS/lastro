@@ -145,32 +145,56 @@ export function TransactionsPage() {
       )}
 
       {transactions && transactions.length > 0 && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Data</TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead>Categoria</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {transactions.map((transaction) => (
-              <TableRow key={transaction.id}>
-                <TableCell className="tabular-nums">{transaction.date}</TableCell>
-                <TableCell>{transaction.description}</TableCell>
-                <TableCell>
-                  {transaction.category_id !== null
-                    ? (categoryNameById.get(transaction.category_id) ?? '—')
-                    : '—'}
-                </TableCell>
-                <TableCell className="text-right">
-                  <MoneyValue cents={transaction.amount_cents} className="justify-end" />
-                </TableCell>
+        <>
+          <Table className="hidden md:table">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Data</TableHead>
+                <TableHead>Descrição</TableHead>
+                <TableHead>Categoria</TableHead>
+                <TableHead className="text-right">Valor</TableHead>
               </TableRow>
+            </TableHeader>
+            <TableBody>
+              {transactions.map((transaction) => (
+                <TableRow key={transaction.id}>
+                  <TableCell className="tabular-nums">{transaction.date}</TableCell>
+                  <TableCell>{transaction.description}</TableCell>
+                  <TableCell>
+                    {transaction.category_id !== null
+                      ? (categoryNameById.get(transaction.category_id) ?? '—')
+                      : '—'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <MoneyValue cents={transaction.amount_cents} className="justify-end" />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          <div className="flex flex-col gap-2 md:hidden">
+            {transactions.map((transaction) => (
+              <div
+                key={transaction.id}
+                className="flex flex-col gap-1 rounded-lg border border-border p-3"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{transaction.description}</span>
+                  <MoneyValue cents={transaction.amount_cents} />
+                </div>
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span className="tabular-nums">{transaction.date}</span>
+                  <span>
+                    {transaction.category_id !== null
+                      ? (categoryNameById.get(transaction.category_id) ?? '—')
+                      : '—'}
+                  </span>
+                </div>
+              </div>
             ))}
-          </TableBody>
-        </Table>
+          </div>
+        </>
       )}
     </div>
   )
