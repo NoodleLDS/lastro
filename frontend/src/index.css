@@ -6,29 +6,29 @@
 :root {
   color-scheme: dark;
 
-  --background: #0f1115;
-  --foreground: #e5e7eb;
-  --card: #16181d;
-  --card-foreground: #e5e7eb;
-  --popover: #16181d;
-  --popover-foreground: #e5e7eb;
-  --primary: #c084fc;
-  --primary-foreground: #16171d;
-  --secondary: #1c1f26;
-  --secondary-foreground: #e5e7eb;
-  --muted: #1c1f26;
-  --muted-foreground: #9ca3af;
-  --accent: #1c1f26;
-  --accent-foreground: #e5e7eb;
-  --destructive: #ef4444;
-  --success: #34d399;
+  --background: #14110f;
+  --foreground: #f1ece6;
+  --card: #1d1815;
+  --card-foreground: #f1ece6;
+  --popover: #1d1815;
+  --popover-foreground: #f1ece6;
+  --primary: #f0a868;
+  --primary-foreground: #1c1306;
+  --secondary: #261f1a;
+  --secondary-foreground: #f1ece6;
+  --muted: #261f1a;
+  --muted-foreground: #b3a89d;
+  --accent: #2c2118;
+  --accent-foreground: #f1ece6;
+  --destructive: #f0654f;
+  --success: #4fd6a5;
   --success-foreground: #052e1f;
   --warning: #fbbf24;
   --warning-foreground: #1c1306;
-  --border: #2a2d35;
-  --input: #2a2d35;
-  --ring: #c084fc;
-  --radius: 0.625rem;
+  --border: #34291f;
+  --input: #34291f;
+  --ring: #f0a868;
+  --radius: 0.75rem;
 }
 
 @theme inline {
@@ -63,6 +63,11 @@
 body {
   margin: 0;
   background-color: var(--background);
+  background-image: radial-gradient(
+    ellipse 80% 50% at 50% -10%,
+    color-mix(in srgb, var(--primary) 14%, transparent),
+    transparent
+  );
   color: var(--foreground);
   font-family: system-ui, "Segoe UI", Roboto, sans-serif;
 }
