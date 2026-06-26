@@ -15,6 +15,7 @@ from lastro.api.health import router as health_router
 from lastro.api.merchant_rules import router as merchant_rules_router
 from lastro.api.monthly_summary import router as monthly_summary_router
 from lastro.api.positions import router as positions_router
+from lastro.api.reports import router as reports_router
 from lastro.api.sales import router as sales_router
 from lastro.api.snapshots import router as snapshots_router
 from lastro.api.transactions import router as transactions_router
@@ -50,3 +51,4 @@ app.include_router(allocation_targets_router)
 app.include_router(dashboard_router)
 app.include_router(analyst_router)
 app.include_router(monthly_summary_router)
+app.include_router(reports_router)
