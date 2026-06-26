@@ -1,4 +1,6 @@
 import json
+from collections.abc import AsyncIterator
+from dataclasses import dataclass
 
 import httpx
 import structlog
@@ -7,6 +9,14 @@ from fastapi import HTTPException
 from lastro.services.llm.provider import VisionExtractedItem
 
 logger = structlog.get_logger()
+
+
+@dataclass
+class StreamChunk:
+    content: str
+    done: bool
+    model: str | None = None
+    tokens_per_second: float | None = None
 
 _CATEGORIZE_SCHEMA = {
     "type": "object",
@@ -89,6 +99,47 @@ class OllamaProvider:
             ) from exc
 
         return body["message"]["content"]
+
+    async def complete_stream(
+        self, system_prompt: str, user_message: str
+    ) -> AsyncIterator[StreamChunk]:
+        try:
+            async with httpx.AsyncClient(timeout=150) as client:
+                async with client.stream(
+                    "POST",
+                    f"{self._base_url}/api/chat",
+                    json={
+                        "model": self._model,
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_message},
+                        ],
+                        "stream": True,
+                    },
+                ) as response:
+                    response.raise_for_status()
+                    async for line in response.aiter_lines():
+                        if not line:
+                            continue
+                        chunk = json.loads(line)
+                        done = chunk.get("done", False)
+                        tokens_per_second = None
+                        if done:
+                            eval_count = chunk.get("eval_count")
+                            eval_duration = chunk.get("eval_duration")
+                            if eval_count and eval_duration:
+                                tokens_per_second = eval_count / (eval_duration / 1e9)
+                        yield StreamChunk(
+                            content=chunk.get("message", {}).get("content", ""),
+                            done=done,
+                            model=chunk.get("model"),
+                            tokens_per_second=tokens_per_second,
+                        )
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError) as exc:
+            logger.warning("ollama_complete_stream_indisponivel", error=str(exc))
+            raise HTTPException(
+                status_code=503, detail=_OLLAMA_UNAVAILABLE_DETAIL
+            ) from exc
 
 
 def _parse_category(raw_content: str) -> str | None:
