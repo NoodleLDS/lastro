@@ -55,3 +55,17 @@ export async function apiUpload<T>(path: string, formData: FormData): Promise<T>
   })
   return handleResponse<T>(response)
 }
+
+export async function apiDownload(path: string, filename: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}${path}`)
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`)
+  }
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
