@@ -2,15 +2,37 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
+import { Skeleton } from '@/components/ui/skeleton'
 import { formatCents } from '@/lib/format'
 import { useAllocation } from './useAllocation'
 
-const COLORS = ['var(--primary)', 'var(--success)', 'var(--warning)', '#60a5fa', 'var(--destructive)']
+const COLORS = [
+  'var(--primary)',
+  'var(--success)',
+  'var(--warning)',
+  '#60a5fa',
+  'var(--destructive)',
+]
 
 export function AllocationChart() {
   const { data: allocation, isLoading } = useAllocation()
 
-  if (isLoading) return <p className="text-muted-foreground">carregando...</p>
+  if (isLoading) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Alocação por classe</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <Skeleton className="h-[220px] w-full" />
+          {Array.from({ length: 3 }).map((_, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: placeholder estável, sem identidade própria
+            <Skeleton key={index} className="h-8 w-full" />
+          ))}
+        </CardContent>
+      </Card>
+    )
+  }
   if (!allocation || allocation.length === 0) {
     return <p className="text-muted-foreground">nenhuma posição com cotação ainda</p>
   }

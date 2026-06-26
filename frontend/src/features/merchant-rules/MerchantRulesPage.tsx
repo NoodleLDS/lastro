@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
   TableBody,
@@ -25,7 +26,14 @@ export function MerchantRulesPage() {
       <h2 className="text-lg font-semibold">Regras</h2>
       <MerchantRuleForm />
 
-      {isLoading && <p className="text-muted-foreground">carregando...</p>}
+      {isLoading && (
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: 4 }).map((_, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: placeholder estável, sem identidade própria
+            <Skeleton key={index} className="h-9 w-full" />
+          ))}
+        </div>
+      )}
 
       {rules && rules.length === 0 && (
         <p className="text-muted-foreground">nenhuma regra cadastrada ainda</p>

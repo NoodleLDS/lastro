@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
   TableBody,
@@ -130,7 +131,14 @@ export function TransactionsPage() {
         )}
       </div>
 
-      {isLoading && <p className="text-muted-foreground">carregando...</p>}
+      {isLoading && (
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: 6 }).map((_, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: placeholder estável, sem identidade própria
+            <Skeleton key={index} className="h-10 w-full" />
+          ))}
+        </div>
+      )}
 
       {!isLoading && transactions && transactions.length === 0 && (
         <p className="text-muted-foreground">nenhuma transação encontrada para esse filtro.</p>

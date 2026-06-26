@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import { PercentValue } from '@/components/money-value'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { formatCents } from '@/lib/format'
 import { useEvolution } from './useEvolution'
 
@@ -29,7 +30,19 @@ function CountUpValue({ cents }: { cents: number }) {
 export function EvolutionChart() {
   const { data, isLoading } = useEvolution()
 
-  if (isLoading) return <p className="text-muted-foreground">carregando...</p>
+  if (isLoading) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Evolução do patrimônio</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <Skeleton className="h-8 w-40" />
+          <Skeleton className="h-[220px] w-full" />
+        </CardContent>
+      </Card>
+    )
+  }
   if (!data || data.points.length === 0) {
     return <p className="text-muted-foreground">nenhum snapshot registrado ainda</p>
   }

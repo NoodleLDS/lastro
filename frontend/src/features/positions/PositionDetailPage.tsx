@@ -9,6 +9,7 @@ import {
 } from 'recharts'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
   TableBody,
@@ -72,7 +73,7 @@ export function PositionDetailPage({
         )}
       </div>
 
-      {isLoading && <p className="text-muted-foreground">carregando...</p>}
+      {isLoading && <Skeleton className="h-[220px] w-full" />}
 
       {chartData && chartData.length > 0 && (
         <Card>

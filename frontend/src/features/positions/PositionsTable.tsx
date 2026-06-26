@@ -1,5 +1,6 @@
 import { MoneyValue } from '@/components/money-value'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
   TableBody,
@@ -33,7 +34,14 @@ export function PositionsTable({
         <p className="text-sm text-destructive">{refreshQuotes.error.message}</p>
       )}
 
-      {isLoading && <p className="text-muted-foreground">carregando...</p>}
+      {isLoading && (
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: 5 }).map((_, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: placeholder estável, sem identidade própria
+            <Skeleton key={index} className="h-10 w-full" />
+          ))}
+        </div>
+      )}
 
       {positions && positions.length > 0 && (
         <Table>

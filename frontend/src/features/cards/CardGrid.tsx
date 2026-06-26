@@ -2,6 +2,7 @@ import { Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { CardContent, Card as CardPrimitive } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { CardForm } from './CardForm'
 import { type Card, useCards } from './useCards'
@@ -33,9 +34,13 @@ export function CardGrid({ selectedCardId, onSelectCard }: CardGridProps) {
         </Button>
       </div>
 
-      {isLoading && <p className="text-muted-foreground">carregando...</p>}
-
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+        {isLoading &&
+          Array.from({ length: 4 }).map((_, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: placeholder estável, sem identidade própria
+            <Skeleton key={index} className="h-[88px] w-full" />
+          ))}
+
         {cards?.map((card) => (
           <div key={card.id} className="group relative">
             <button
