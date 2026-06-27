@@ -1,8 +1,8 @@
 import { animate, motion, useMotionValue, useTransform } from 'framer-motion'
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
 import { useEffect } from 'react'
-import { cn } from '@/lib/utils'
 import { formatCents, formatPercent, signOf } from '@/lib/format'
+import { cn } from '@/lib/utils'
 
 const colorBySign = {
   positive: 'text-success',
