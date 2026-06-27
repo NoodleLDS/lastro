@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { MoneyValue } from '@/components/money-value'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -13,6 +14,33 @@ import { formatCents } from '@/lib/format'
 import { getTickerIcon } from './ticker-icons'
 import type { Position } from './usePositions'
 import { usePositions, useRefreshQuotes } from './usePositions'
+
+const ASSET_TYPE_ORDER = ['stock', 'fii', 'etf', 'fixed_income', 'crypto']
+
+const ASSET_TYPE_LABELS: Record<string, string> = {
+  stock: 'Ações',
+  fii: 'FIIs',
+  etf: 'ETFs',
+  fixed_income: 'Renda fixa',
+  crypto: 'Cripto',
+}
+
+function groupByAssetType(positions: Position[]) {
+  const groups = new Map<string, Position[]>()
+  for (const position of positions) {
+    const group = groups.get(position.asset_type) ?? []
+    group.push(position)
+    groups.set(position.asset_type, group)
+  }
+  return [...groups.entries()].sort(([a], [b]) => {
+    const indexA = ASSET_TYPE_ORDER.indexOf(a)
+    const indexB = ASSET_TYPE_ORDER.indexOf(b)
+    return (
+      (indexA === -1 ? ASSET_TYPE_ORDER.length : indexA) -
+      (indexB === -1 ? ASSET_TYPE_ORDER.length : indexB)
+    )
+  })
+}
 
 export function PositionsTable({
   onSelectPosition,
@@ -59,104 +87,128 @@ export function PositionsTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {positions.map((position) => (
-                <TableRow
-                  key={position.id}
-                  className={onSelectPosition ? 'cursor-pointer' : undefined}
-                  onClick={() => onSelectPosition?.(position)}
-                >
-                  <TableCell className="font-medium">
-                    <span className="inline-flex items-center gap-2">
-                      {getTickerIcon(position.ticker, position.asset_type) && (
-                        <img
-                          src={getTickerIcon(position.ticker, position.asset_type)!}
-                          alt=""
-                          className="size-5 rounded-full object-contain"
-                          aria-hidden
-                        />
-                      )}
-                      {position.ticker}
-                    </span>
-                  </TableCell>
-                  <TableCell>{position.asset_type}</TableCell>
-                  <TableCell>{position.quantity}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatCents(position.average_price_cents)}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {position.last_price_cents !== null
-                      ? formatCents(position.last_price_cents)
-                      : '—'}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {position.total_return ? (
-                      <span className="inline-flex items-center justify-end gap-1.5">
-                        <MoneyValue cents={position.total_return.total_return_cents} showArrow />
-                        <span className="text-muted-foreground">
-                          ({position.total_return.total_return_pct.toFixed(2)}%)
+              {groupByAssetType(positions).map(([assetType, group]) => (
+                <Fragment key={assetType}>
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell
+                      colSpan={7}
+                      className="bg-muted/30 py-1.5 text-xs font-semibold text-muted-foreground"
+                    >
+                      {ASSET_TYPE_LABELS[assetType] ?? assetType}
+                    </TableCell>
+                  </TableRow>
+                  {group.map((position) => (
+                    <TableRow
+                      key={position.id}
+                      className={onSelectPosition ? 'cursor-pointer' : undefined}
+                      onClick={() => onSelectPosition?.(position)}
+                    >
+                      <TableCell className="font-medium">
+                        <span className="inline-flex items-center gap-2">
+                          {getTickerIcon(position.ticker, position.asset_type) && (
+                            <img
+                              src={getTickerIcon(position.ticker, position.asset_type)!}
+                              alt=""
+                              className="size-5 rounded-full object-contain"
+                              aria-hidden
+                            />
+                          )}
+                          {position.ticker}
                         </span>
-                      </span>
-                    ) : (
-                      '—'
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {position.valuation ? (
-                      <span
-                        className={
-                          position.valuation.is_undervalued ? 'text-success' : 'text-destructive'
-                        }
-                      >
-                        {position.valuation.margin_of_safety_pct.toFixed(1)}%
-                      </span>
-                    ) : (
-                      '—'
-                    )}
-                  </TableCell>
-                </TableRow>
+                      </TableCell>
+                      <TableCell>{position.asset_type}</TableCell>
+                      <TableCell>{position.quantity}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatCents(position.average_price_cents)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {position.last_price_cents !== null
+                          ? formatCents(position.last_price_cents)
+                          : '—'}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {position.total_return ? (
+                          <span className="inline-flex items-center justify-end gap-1.5">
+                            <MoneyValue
+                              cents={position.total_return.total_return_cents}
+                              showArrow
+                            />
+                            <span className="text-muted-foreground">
+                              ({position.total_return.total_return_pct.toFixed(2)}%)
+                            </span>
+                          </span>
+                        ) : (
+                          '—'
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {position.valuation ? (
+                          <span
+                            className={
+                              position.valuation.is_undervalued
+                                ? 'text-success'
+                                : 'text-destructive'
+                            }
+                          >
+                            {position.valuation.margin_of_safety_pct.toFixed(1)}%
+                          </span>
+                        ) : (
+                          '—'
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </Fragment>
               ))}
             </TableBody>
           </Table>
 
-          <div className="flex flex-col gap-2 md:hidden">
-            {positions.map((position) => (
-              <button
-                type="button"
-                key={position.id}
-                className="flex flex-col gap-2 rounded-lg border border-border p-3 text-left"
-                onClick={() => onSelectPosition?.(position)}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-2 font-medium">
-                    {getTickerIcon(position.ticker, position.asset_type) && (
-                      <img
-                        src={getTickerIcon(position.ticker, position.asset_type)!}
-                        alt=""
-                        className="size-5 rounded-full object-contain"
-                        aria-hidden
-                      />
+          <div className="flex flex-col gap-4 md:hidden">
+            {groupByAssetType(positions).map(([assetType, group]) => (
+              <div key={assetType} className="flex flex-col gap-2">
+                <h3 className="text-xs font-semibold text-muted-foreground">
+                  {ASSET_TYPE_LABELS[assetType] ?? assetType}
+                </h3>
+                {group.map((position) => (
+                  <button
+                    type="button"
+                    key={position.id}
+                    className="flex flex-col gap-2 rounded-lg border border-border p-3 text-left"
+                    onClick={() => onSelectPosition?.(position)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-2 font-medium">
+                        {getTickerIcon(position.ticker, position.asset_type) && (
+                          <img
+                            src={getTickerIcon(position.ticker, position.asset_type)!}
+                            alt=""
+                            className="size-5 rounded-full object-contain"
+                            aria-hidden
+                          />
+                        )}
+                        {position.ticker}
+                      </span>
+                      <span className="text-sm text-muted-foreground">{position.asset_type}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>Qtd: {position.quantity}</span>
+                      <span className="tabular-nums">
+                        {position.last_price_cents !== null
+                          ? formatCents(position.last_price_cents)
+                          : formatCents(position.average_price_cents)}
+                      </span>
+                    </div>
+                    {position.total_return && (
+                      <div className="flex items-center justify-end gap-1.5 text-sm">
+                        <MoneyValue cents={position.total_return.total_return_cents} showArrow />
+                        <span className="text-muted-foreground">
+                          ({position.total_return.total_return_pct.toFixed(2)}%)
+                        </span>
+                      </div>
                     )}
-                    {position.ticker}
-                  </span>
-                  <span className="text-sm text-muted-foreground">{position.asset_type}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>Qtd: {position.quantity}</span>
-                  <span className="tabular-nums">
-                    {position.last_price_cents !== null
-                      ? formatCents(position.last_price_cents)
-                      : formatCents(position.average_price_cents)}
-                  </span>
-                </div>
-                {position.total_return && (
-                  <div className="flex items-center justify-end gap-1.5 text-sm">
-                    <MoneyValue cents={position.total_return.total_return_cents} showArrow />
-                    <span className="text-muted-foreground">
-                      ({position.total_return.total_return_pct.toFixed(2)}%)
-                    </span>
-                  </div>
-                )}
-              </button>
+                  </button>
+                ))}
+              </div>
             ))}
           </div>
         </>
