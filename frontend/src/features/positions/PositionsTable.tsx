@@ -10,6 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { formatCents } from '@/lib/format'
+import { getTickerIcon } from './ticker-icons'
 import type { Position } from './usePositions'
 import { usePositions, useRefreshQuotes } from './usePositions'
 
@@ -63,7 +64,19 @@ export function PositionsTable({
                   className={onSelectPosition ? 'cursor-pointer' : undefined}
                   onClick={() => onSelectPosition?.(position)}
                 >
-                  <TableCell className="font-medium">{position.ticker}</TableCell>
+                  <TableCell className="font-medium">
+                    <span className="inline-flex items-center gap-2">
+                      {getTickerIcon(position.ticker, position.asset_type) && (
+                        <img
+                          src={getTickerIcon(position.ticker, position.asset_type)!}
+                          alt=""
+                          className="size-5 rounded-full object-contain"
+                          aria-hidden
+                        />
+                      )}
+                      {position.ticker}
+                    </span>
+                  </TableCell>
                   <TableCell>{position.asset_type}</TableCell>
                   <TableCell>{position.quantity}</TableCell>
                   <TableCell className="text-right tabular-nums">
@@ -100,7 +113,17 @@ export function PositionsTable({
                 onClick={() => onSelectPosition?.(position)}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">{position.ticker}</span>
+                  <span className="inline-flex items-center gap-2 font-medium">
+                    {getTickerIcon(position.ticker, position.asset_type) && (
+                      <img
+                        src={getTickerIcon(position.ticker, position.asset_type)!}
+                        alt=""
+                        className="size-5 rounded-full object-contain"
+                        aria-hidden
+                      />
+                    )}
+                    {position.ticker}
+                  </span>
                   <span className="text-sm text-muted-foreground">{position.asset_type}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm text-muted-foreground">

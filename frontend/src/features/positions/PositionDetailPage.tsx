@@ -19,6 +19,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { formatCents } from '@/lib/format'
+import { getTickerIcon } from './ticker-icons'
 import { usePositionHistory } from './usePositionHistory'
 import type { Position } from './usePositions'
 
@@ -45,7 +46,15 @@ export function PositionDetailPage({
   return (
     <div className="flex w-full flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">
+        <h2 className="flex items-center gap-2 text-lg font-semibold">
+          {getTickerIcon(position.ticker, position.asset_type) && (
+            <img
+              src={getTickerIcon(position.ticker, position.asset_type)!}
+              alt=""
+              className="size-6 rounded-full object-contain"
+              aria-hidden
+            />
+          )}
           {position.ticker} — {position.name}
         </h2>
         <Button variant="ghost" onClick={onBack}>

@@ -43,7 +43,12 @@ interface PercentValueProps {
   className?: string
 }
 
-export function PercentValue({ value, showArrow = false, digits = 1, className }: PercentValueProps) {
+export function PercentValue({
+  value,
+  showArrow = false,
+  digits = 1,
+  className,
+}: PercentValueProps) {
   const sign = signOf(value)
   const Arrow = ArrowBySign[sign]
 
