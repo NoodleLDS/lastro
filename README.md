@@ -1,75 +1,75 @@
 # Lastro
 
-App local de gestão financeira e de patrimônio pessoal. Single-user, roda na sua máquina — sem nuvem, sem servidor remoto, sem terceiros vendo seus dados financeiros.
+Local personal finance and net worth management app. Single-user, runs on your own machine — no cloud, no remote server, no third party seeing your financial data.
 
-Substitui uma planilha: os dados vivem num banco SQLite, cotações entram ao vivo (B3, cripto, CDI/Selic/IPCA), e uma camada de IA local (Ollama) categoriza lançamentos e responde como analista.
+Replaces a spreadsheet: data lives in a SQLite database, quotes come in live (B3, crypto, CDI/Selic/IPCA), and a local AI layer (Ollama) categorizes transactions and answers as a financial analyst.
 
 ## Stack
 
-- **Backend** — Python 3.12+, FastAPI, SQLModel, SQLite, Alembic (`uv` como gerenciador de pacotes)
+- **Backend** — Python 3.12+, FastAPI, SQLModel, SQLite, Alembic (`uv` as package manager)
 - **Frontend** — React 19 + TypeScript, Vite, Tailwind, shadcn/ui (`pnpm`)
-- **IA** — Ollama local (default) ou Claude API (opt-in, só para leitura de fatura por print)
-- **Cotações** — brapi.dev (B3), CoinGecko (cripto), BCB-SGS (CDI/Selic/IPCA)
-- **Deploy** — Docker Compose (`api` + `web` + `ollama`), tudo local
+- **AI** — local Ollama (default) or Claude API (opt-in, only for reading a bill from a screenshot)
+- **Quotes** — brapi.dev (B3), CoinGecko (crypto), BCB-SGS (CDI/Selic/IPCA)
+- **Deploy** — Docker Compose (`api` + `web` + `ollama`), everything local
 
-Detalhes de arquitetura, invariantes de domínio e roadmap de fases ficam em [`CLAUDE.md`](./CLAUDE.md).
+Architecture details, domain invariants, and the phase roadmap live in [`CLAUDE.md`](./CLAUDE.md).
 
-## Como rodar
+## Running it
 
-### Opção 1 — um clique (Windows)
+### Option 1 — one click (Windows)
 
-1. Gere o executável uma vez: `just build-launcher`
-2. Dê duplo-clique em `launcher/dist/Lastro.exe` (ou no atalho da área de trabalho)
+1. Build the executable once: `just build-launcher`
+2. Double-click `launcher/dist/Lastro.exe` (or the desktop shortcut)
 
-Isso sobe os containers Docker, espera a API responder e abre o navegador direto no app. Se algo falhar, o erro fica em `launcher/lastro_launcher.log`.
+This brings up the Docker containers, waits for the API to respond, and opens the browser straight into the app. If something fails, the error is logged to `launcher/lastro_launcher.log`.
 
-> Pré-requisito: Docker Desktop instalado e aberto.
+> Prerequisite: Docker Desktop installed and running.
 
-### Opção 2 — manual
+### Option 2 — manual
 
 ```bash
 just up          # docker compose up (api + web + ollama)
 ```
 
-Depois abra `http://localhost:5173`.
+Then open `http://localhost:5173`.
 
-Sem `just` instalado, equivalente: `docker compose up`.
+Without `just` installed, the equivalent is: `docker compose up`.
 
-### Desenvolvimento (sem Docker)
+### Development (without Docker)
 
 ```bash
 just dev-api     # uv run uvicorn lastro.main:app --reload (backend/)
 just dev-web     # pnpm dev (frontend/)
 ```
 
-> Não rode `dev-api` e o container `api` do Docker ao mesmo tempo — os dois competem pela porta 8000 e escrevem em bancos diferentes (um foi o motivo de uma perda de dados anterior neste projeto). Pare o container (`docker compose stop api`) antes de rodar localmente.
+> Don't run `dev-api` and the Docker `api` container at the same time — they compete for port 8000 and write to different databases (this caused a previous data loss in this project). Stop the container (`docker compose stop api`) before running locally.
 
-## Comandos úteis (`justfile`)
+## Useful commands (`justfile`)
 
 ```
 just up              # docker compose up (api + web + ollama)
-just dev-api         # uvicorn local com reload
+just dev-api         # local uvicorn with reload
 just dev-web         # vite dev server
 just test            # pytest + vitest
 just lint            # ruff check + biome check
 just fmt             # ruff format + biome format
 just migrate "<msg>" # alembic revision --autogenerate -m
 just upgrade         # alembic upgrade head
-just build-launcher  # gera launcher/dist/Lastro.exe
+just build-launcher  # builds launcher/dist/Lastro.exe
 ```
 
-## Estrutura
+## Structure
 
 ```
 lastro/
 ├── backend/        # FastAPI + SQLModel + Alembic
 ├── frontend/       # React + Vite + shadcn/ui
-├── launcher/       # script + build do Lastro.exe
+├── launcher/       # Lastro.exe script + build
 ├── docker-compose.yml
 ├── justfile
-└── CLAUDE.md       # arquitetura, invariantes, fases, protocolo de trabalho
+└── CLAUDE.md       # architecture, invariants, phases, work protocol
 ```
 
-## Dados e privacidade
+## Data and privacy
 
-Todo o banco fica num volume Docker local (`lastro-db`), nunca em disco compartilhado nem na nuvem. A camada de IA é opt-in para Claude API e só é usada para visão de fatura por print — por padrão tudo roda no Ollama local. Nenhum valor financeiro vindo de IA grava direto no banco: sempre passa por uma prévia editável pelo usuário.
+The whole database lives in a local Docker volume (`lastro-db`), never on shared disk or in the cloud. The AI layer is opt-in for Claude API and only used for reading a bill from a screenshot — by default everything runs on local Ollama. No financial value coming from AI writes directly to the database: it always goes through a preview the user can edit.
