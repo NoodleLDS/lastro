@@ -26,4 +26,4 @@ upgrade:
     cd backend && uv run alembic upgrade head
 
 build-launcher:
-    cd launcher && uv run pyinstaller --onefile --windowed --name Lastro lastro_launcher.py
+    cd launcher && uv run pyinstaller --onefile --windowed --name Lastro --icon lastro.ico lastro_launcher.py
