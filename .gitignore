@@ -36,3 +36,7 @@ backend/sheetnames.txt
 launcher/build/
 launcher/*.spec
 launcher/*.log
+
+# Playwright MCP debug artifacts
+.playwright-mcp/
+/*.png
