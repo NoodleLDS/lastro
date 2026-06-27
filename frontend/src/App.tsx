@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -8,6 +9,7 @@ import {
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AnalystChat } from '@/features/analyst/AnalystChat'
+import { LoginPage } from '@/features/auth/LoginPage'
 import { CardGrid } from '@/features/cards/CardGrid'
 import { CardMonthSpending } from '@/features/cards/CardMonthSpending'
 import { useCards } from '@/features/cards/useCards'
@@ -23,6 +25,7 @@ import { ReportsPage } from '@/features/reports/ReportsPage'
 import { TransactionsPage } from '@/features/transactions/TransactionsPage'
 import { VisionPreviewTable } from '@/features/vision-preview/VisionPreviewTable'
 import { VisionUpload } from '@/features/vision-preview/VisionUpload'
+import { useAuth } from '@/lib/auth-context'
 import { useTheme } from '@/lib/theme-context'
 import { THEME_LABELS, type ThemeName } from '@/lib/themes'
 
@@ -42,8 +45,13 @@ function App() {
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null)
   const { data: cards } = useCards()
   const { theme, setTheme } = useTheme()
+  const { isAuthenticated, logout } = useAuth()
 
   const selectedCard = cards?.find((c) => c.id === selectedCardId) ?? null
+
+  if (!isAuthenticated) {
+    return <LoginPage />
+  }
 
   return (
     <main className="mx-auto flex min-h-svh max-w-7xl flex-col gap-8 p-8">
@@ -56,18 +64,23 @@ function App() {
           </div>
         </div>
 
-        <Select value={theme} onValueChange={(value) => setTheme(value as ThemeName)}>
-          <SelectTrigger className="w-40" aria-label="Modelos">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.entries(THEME_LABELS).map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-3">
+          <Select value={theme} onValueChange={(value) => setTheme(value as ThemeName)}>
+            <SelectTrigger className="w-40" aria-label="Modelos">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(THEME_LABELS).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="outline" onClick={logout}>
+            Sair
+          </Button>
+        </div>
       </header>
 
       <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)}>
