@@ -74,9 +74,7 @@ async def test_create_merchant_rule_permite_pattern_repetido_se_anterior_inativo
 
 
 async def test_create_merchant_rule_rejeita_category_id_inexistente(client: AsyncClient) -> None:
-    response = await client.post(
-        "/merchant-rules", json={"pattern": "uber", "category_id": 9999}
-    )
+    response = await client.post("/merchant-rules", json={"pattern": "uber", "category_id": 9999})
     assert response.status_code == 422
 
     response = await client.get("/merchant-rules")

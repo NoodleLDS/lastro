@@ -18,6 +18,7 @@ class StreamChunk:
     model: str | None = None
     tokens_per_second: float | None = None
 
+
 _CATEGORIZE_SCHEMA = {
     "type": "object",
     "properties": {
@@ -94,9 +95,7 @@ class OllamaProvider:
                 body = response.json()
         except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError) as exc:
             logger.warning("ollama_complete_indisponivel", error=str(exc))
-            raise HTTPException(
-                status_code=503, detail=_OLLAMA_UNAVAILABLE_DETAIL
-            ) from exc
+            raise HTTPException(status_code=503, detail=_OLLAMA_UNAVAILABLE_DETAIL) from exc
 
         return body["message"]["content"]
 
@@ -137,9 +136,7 @@ class OllamaProvider:
                         )
         except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError) as exc:
             logger.warning("ollama_complete_stream_indisponivel", error=str(exc))
-            raise HTTPException(
-                status_code=503, detail=_OLLAMA_UNAVAILABLE_DETAIL
-            ) from exc
+            raise HTTPException(status_code=503, detail=_OLLAMA_UNAVAILABLE_DETAIL) from exc
 
 
 def _parse_category(raw_content: str) -> str | None:

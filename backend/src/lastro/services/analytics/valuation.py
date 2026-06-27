@@ -38,9 +38,7 @@ def calculate_valuation(
 
     dividends_last_12m_cents = sum(d.amount_cents for d in recent)
     price_ceiling_cents = round(dividends_last_12m_cents / (target_yield_pct / 100))
-    margin_of_safety_pct = (
-        (price_ceiling_cents - current_price_cents) / current_price_cents * 100
-    )
+    margin_of_safety_pct = (price_ceiling_cents - current_price_cents) / current_price_cents * 100
 
     return ValuationResult(
         dividends_last_12m_cents=dividends_last_12m_cents,

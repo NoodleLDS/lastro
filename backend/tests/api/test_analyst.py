@@ -54,9 +54,7 @@ class _OfflineLLM:
         return None
 
     async def complete(self, system_prompt: str, user_message: str) -> str:
-        raise HTTPException(
-            status_code=503, detail="Serviço de IA (Ollama) indisponível."
-        )
+        raise HTTPException(status_code=503, detail="Serviço de IA (Ollama) indisponível.")
 
 
 async def test_ask_analyst_retorna_503_quando_ollama_indisponivel(client: AsyncClient) -> None:

@@ -30,9 +30,7 @@ async def create_merchant_rule(
     )
     existing = (await session.exec(statement)).first()
     if existing is not None:
-        raise HTTPException(
-            status_code=422, detail="já existe uma regra ativa com esse pattern"
-        )
+        raise HTTPException(status_code=422, detail="já existe uma regra ativa com esse pattern")
 
     rule = MerchantRule(**payload.model_dump())
     session.add(rule)

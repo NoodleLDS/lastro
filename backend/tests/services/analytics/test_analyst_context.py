@@ -86,9 +86,7 @@ async def test_contexto_inclui_valuation_quando_target_yield_definido(
         session, "CPTS11", AssetType.FII, last_price_cents=1000, target_yield_pct=10.0
     )
     for month in range(1, 7):
-        session.add(
-            Dividend(position_id=position.id, date=date(2026, month, 1), amount_cents=100)
-        )
+        session.add(Dividend(position_id=position.id, date=date(2026, month, 1), amount_cents=100))
     await session.flush()
 
     context = await build_portfolio_context(session)

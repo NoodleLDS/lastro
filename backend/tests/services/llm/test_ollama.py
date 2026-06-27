@@ -77,8 +77,7 @@ async def test_categorize_retorna_none_quando_ollama_demora_demais() -> None:
     assert result is None
 
 
-async def test_categorize_retorna_none_quando_modelo_nao_esta_pulled(
-) -> None:
+async def test_categorize_retorna_none_quando_modelo_nao_esta_pulled() -> None:
     provider = OllamaProvider("http://ollama.local", "llama3.2:3b")
     request = httpx.Request("POST", "http://ollama.local/api/chat")
     not_found = httpx.Response(404, request=request)
