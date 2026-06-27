@@ -40,7 +40,7 @@ type Tab =
   | 'reports'
 
 function App() {
-  const [tab, setTab] = useState<Tab>('cards')
+  const [tab, setTab] = useState<Tab>('dashboard')
   const [selectedCardId, setSelectedCardId] = useState<number | null>(null)
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null)
   const { data: cards } = useCards()
@@ -85,14 +85,14 @@ function App() {
 
       <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)}>
         <TabsList>
-          <TabsTrigger value="cards">Cartões</TabsTrigger>
-          <TabsTrigger value="transactions">Transações</TabsTrigger>
-          <TabsTrigger value="monthly-summary">Resumo mensal</TabsTrigger>
-          <TabsTrigger value="reports">Relatórios</TabsTrigger>
-          <TabsTrigger value="rules">Regras</TabsTrigger>
-          <TabsTrigger value="portfolio">Carteira</TabsTrigger>
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="cards">Cartões</TabsTrigger>
+          <TabsTrigger value="monthly-summary">Resumo mensal</TabsTrigger>
+          <TabsTrigger value="portfolio">Carteira</TabsTrigger>
+          <TabsTrigger value="transactions">Transações</TabsTrigger>
           <TabsTrigger value="analyst">Analista</TabsTrigger>
+          <TabsTrigger value="rules">Regras</TabsTrigger>
+          <TabsTrigger value="reports">Relatórios</TabsTrigger>
         </TabsList>
 
         <TabsContent value="cards" className="flex flex-col gap-6">
