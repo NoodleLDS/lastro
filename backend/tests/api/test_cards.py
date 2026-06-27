@@ -76,3 +76,42 @@ async def test_update_card_rejeita_closing_day_fora_do_range(client: AsyncClient
 
     response = await client.put(f"/cards/{created['id']}", json={"closing_day": 35})
     assert response.status_code == 422
+
+
+async def test_billing_cycle_com_closing_day_calcula_janela_da_fatura(
+    client: AsyncClient,
+) -> None:
+    created = (
+        await client.post("/cards", json={"name": "PicPay", "closing_day": 7, "due_day": 15})
+    ).json()
+
+    response = await client.get(
+        f"/cards/{created['id']}/billing-cycle", params={"year": 2026, "month": 6}
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["date_from"] == "2026-05-08"
+    assert body["date_to"] == "2026-06-07"
+    assert body["is_calendar_month"] is False
+
+
+async def test_billing_cycle_sem_closing_day_cai_no_mes_calendario(
+    client: AsyncClient,
+) -> None:
+    created = (await client.post("/cards", json={"name": "Nubank"})).json()
+
+    response = await client.get(
+        f"/cards/{created['id']}/billing-cycle", params={"year": 2026, "month": 6}
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["date_from"] == "2026-06-01"
+    assert body["date_to"] == "2026-06-30"
+    assert body["is_calendar_month"] is True
+
+
+async def test_billing_cycle_card_not_found(client: AsyncClient) -> None:
+    response = await client.get("/cards/999/billing-cycle", params={"year": 2026, "month": 6})
+    assert response.status_code == 404

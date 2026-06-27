@@ -7,6 +7,7 @@ const cardSchema = z.object({
   name: z.string(),
   color: z.string(),
   closing_day: z.number().nullable(),
+  due_day: z.number().nullable(),
   is_active: z.boolean(),
 })
 
@@ -24,8 +25,12 @@ export function useCards() {
 export function useCreateCard() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (input: { name: string; color?: string }) =>
-      cardSchema.parse(await apiPost('/cards', input)),
+    mutationFn: async (input: {
+      name: string
+      color?: string
+      closing_day?: number | null
+      due_day?: number | null
+    }) => cardSchema.parse(await apiPost('/cards', input)),
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: ['cards'] })
       const previousCards = queryClient.getQueryData<Card[]>(['cards'])
@@ -33,7 +38,8 @@ export function useCreateCard() {
         id: -Date.now(),
         name: input.name,
         color: input.color ?? '#c084fc',
-        closing_day: null,
+        closing_day: input.closing_day ?? null,
+        due_day: input.due_day ?? null,
         is_active: true,
       }
       queryClient.setQueryData<Card[]>(['cards'], (old) => [...(old ?? []), optimisticCard])
@@ -59,6 +65,7 @@ export function useUpdateCard() {
       name?: string
       color?: string
       closing_day?: number | null
+      due_day?: number | null
     }) => cardSchema.parse(await apiPut(`/cards/${id}`, input)),
     onMutate: async ({ id, ...input }) => {
       await queryClient.cancelQueries({ queryKey: ['cards'] })
