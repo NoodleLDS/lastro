@@ -24,3 +24,6 @@ migrate msg:
 
 upgrade:
     cd backend && uv run alembic upgrade head
+
+build-launcher:
+    cd launcher && uv run pyinstaller --onefile --windowed --name Lastro lastro_launcher.py

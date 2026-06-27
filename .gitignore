@@ -31,3 +31,8 @@ Thumbs.db
 # Dados financeiros pessoais brutos (scratch da planilha, nao versionar)
 backend/picpay.txt
 backend/sheetnames.txt
+
+# Launcher build artifacts
+launcher/build/
+launcher/*.spec
+launcher/*.log
