@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from lastro.models.position import AssetType
 from lastro.services.analytics.magic_number import MagicNumberResult
 from lastro.services.analytics.total_return import TotalReturnResult
+from lastro.services.analytics.valuation import ValuationResult
 
 
 class PositionCreate(BaseModel):
@@ -14,6 +15,10 @@ class PositionCreate(BaseModel):
     name: str
     asset_type: AssetType
     quantity: float = 0
+
+
+class PositionUpdate(BaseModel):
+    target_yield_pct: float | None = None
 
 
 class PositionRead(BaseModel):
@@ -28,8 +33,10 @@ class PositionRead(BaseModel):
     last_price_fetched_at: datetime | None = None
     price_earnings: float | None = None
     earnings_per_share: float | None = None
+    target_yield_pct: float | None = None
     total_return: TotalReturnResult | None = None
     magic_number: MagicNumberResult | None = None
+    valuation: ValuationResult | None = None
 
 
 class PositionEventType(StrEnum):

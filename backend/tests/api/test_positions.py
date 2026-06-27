@@ -1,4 +1,8 @@
 from httpx import AsyncClient
+from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+from lastro.models.position import Position
 
 
 async def _create_position(
@@ -151,3 +155,53 @@ async def test_history_combina_contribution_sale_e_dividend_ordenado_por_data(
 async def test_history_position_not_found(client: AsyncClient) -> None:
     response = await client.get("/positions/999/history")
     assert response.status_code == 404
+
+
+async def test_update_position_seta_target_yield_pct(client: AsyncClient) -> None:
+    position = await _create_position(client)
+
+    response = await client.patch(
+        f"/positions/{position['id']}", json={"target_yield_pct": 8.5}
+    )
+    assert response.status_code == 200
+    assert response.json()["target_yield_pct"] == 8.5
+
+    listed = (await client.get("/positions")).json()
+    assert listed[0]["target_yield_pct"] == 8.5
+
+
+async def test_update_position_not_found(client: AsyncClient) -> None:
+    response = await client.patch("/positions/999", json={"target_yield_pct": 8.5})
+    assert response.status_code == 404
+
+
+async def test_valuation_aparece_quando_preco_dividendo_e_target_yield_disponiveis(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    position = await _create_position(client, ticker="CPTS11", asset_type="fii", quantity=100)
+    await client.patch(f"/positions/{position['id']}", json={"target_yield_pct": 10.0})
+
+    for month in range(1, 7):
+        await client.post(
+            "/dividends",
+            json={
+                "position_id": position["id"],
+                "date": f"2026-{month:02d}-01",
+                "amount_cents": 100,
+            },
+        )
+
+    # simula cotação já atualizada (sem chamar provider externo em teste)
+    db_position = (
+        await session.exec(select(Position).where(Position.id == position["id"]))
+    ).one()
+    db_position.last_price_cents = 1000
+    session.add(db_position)
+    await session.commit()
+
+    response = await client.get("/positions")
+    body = response.json()[0]
+
+    assert body["valuation"] is not None
+    assert body["valuation"]["price_ceiling_cents"] == 6000
+    assert body["valuation"]["is_undervalued"] is True

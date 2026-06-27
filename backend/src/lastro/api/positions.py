@@ -16,10 +16,12 @@ from lastro.schemas.position import (
     PositionEventType,
     PositionHistory,
     PositionRead,
+    PositionUpdate,
     PricePoint,
 )
 from lastro.services.analytics.magic_number import calculate_magic_number
 from lastro.services.analytics.total_return import calculate_total_return
+from lastro.services.analytics.valuation import calculate_valuation
 from lastro.services.portfolio.average_price import calculate_average_price_cents
 from lastro.services.portfolio.price_history import record_price_point
 from lastro.services.quotes.dependency import get_quote_provider
@@ -48,6 +50,7 @@ async def _to_position_read(session: AsyncSession, position: Position) -> Positi
 
     total_return = None
     magic_number = None
+    valuation = None
     if position.last_price_cents is not None:
         dividends = await _dividends_for(session, position.id)
         sales = await _sales_for(session, position.id)
@@ -55,6 +58,9 @@ async def _to_position_read(session: AsyncSession, position: Position) -> Positi
             contributions, dividends, position.last_price_cents, sales
         )
         magic_number = calculate_magic_number(dividends, position.last_price_cents, date.today())
+        valuation = calculate_valuation(
+            dividends, position.target_yield_pct, position.last_price_cents, date.today()
+        )
 
     return PositionRead(
         id=position.id,
@@ -68,8 +74,10 @@ async def _to_position_read(session: AsyncSession, position: Position) -> Positi
         last_price_fetched_at=position.last_price_fetched_at,
         price_earnings=position.price_earnings,
         earnings_per_share=position.earnings_per_share,
+        target_yield_pct=position.target_yield_pct,
         total_return=total_return,
         magic_number=magic_number,
+        valuation=valuation,
     )
 
 
@@ -85,6 +93,21 @@ async def create_position(
     payload: PositionCreate, session: AsyncSession = Depends(get_session)
 ) -> PositionRead:
     position = Position(**payload.model_dump())
+    session.add(position)
+    await session.commit()
+    await session.refresh(position)
+    return await _to_position_read(session, position)
+
+
+@router.patch("/{position_id}", response_model=PositionRead)
+async def update_position(
+    position_id: int, payload: PositionUpdate, session: AsyncSession = Depends(get_session)
+) -> PositionRead:
+    position = await session.get(Position, position_id)
+    if position is None:
+        raise HTTPException(status_code=404, detail="posição não encontrada")
+
+    position.target_yield_pct = payload.target_yield_pct
     session.add(position)
     await session.commit()
     await session.refresh(position)

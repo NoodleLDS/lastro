@@ -11,6 +11,7 @@ from lastro.models.sale import Sale
 from lastro.services.analytics.allocation import calculate_allocation
 from lastro.services.analytics.magic_number import calculate_magic_number
 from lastro.services.analytics.total_return import calculate_total_return
+from lastro.services.analytics.valuation import calculate_valuation
 from lastro.services.portfolio.average_price import calculate_average_price_cents
 
 
@@ -66,6 +67,17 @@ async def build_portfolio_context(session: AsyncSession) -> str:
             if magic_number is not None:
                 status = "atingido" if magic_number.is_achieved else "não atingido"
                 parts.append(f"número mágico {status}")
+
+            valuation = calculate_valuation(
+                dividends, position.target_yield_pct, position.last_price_cents, date.today()
+            )
+            if valuation is not None:
+                veredito = "subvalorizado" if valuation.is_undervalued else "sobrevalorizado"
+                parts.append(
+                    f"preço-teto (DY-alvo {position.target_yield_pct:.1f}%) "
+                    f"{_format_cents(valuation.price_ceiling_cents)}, "
+                    f"margem de segurança {valuation.margin_of_safety_pct:.1f}% ({veredito})"
+                )
 
         if position.roe_percentage is not None:
             parts.append(f"ROE {position.roe_percentage:.1f}%")

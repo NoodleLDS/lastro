@@ -24,3 +24,4 @@ class Position(SQLModel, table=True):
     roe_percentage: float | None = Field(default=None)
     price_earnings: float | None = Field(default=None)
     earnings_per_share: float | None = Field(default=None)
+    target_yield_pct: float | None = Field(default=None)
