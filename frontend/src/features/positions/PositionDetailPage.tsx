@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   CartesianGrid,
   Line,
@@ -9,6 +10,8 @@ import {
 } from 'recharts'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
@@ -22,6 +25,7 @@ import { formatCents } from '@/lib/format'
 import { getTickerIcon } from './ticker-icons'
 import { usePositionHistory } from './usePositionHistory'
 import type { Position } from './usePositions'
+import { useUpdateTargetYield } from './usePositions'
 
 const EVENT_LABEL: Record<string, string> = {
   contribution: 'Compra',
@@ -37,11 +41,22 @@ export function PositionDetailPage({
   onBack: () => void
 }) {
   const { data, isLoading } = usePositionHistory(position.id)
+  const updateTargetYield = useUpdateTargetYield()
+  const [targetYieldInput, setTargetYieldInput] = useState(
+    position.target_yield_pct?.toString() ?? '',
+  )
 
   const chartData = data?.price_history.map((p) => ({
     date: p.date,
     preco: p.price_cents / 100,
   }))
+
+  function handleTargetYieldBlur() {
+    const parsed = targetYieldInput.trim() === '' ? null : Number(targetYieldInput)
+    if (parsed === position.target_yield_pct) return
+    if (parsed !== null && Number.isNaN(parsed)) return
+    updateTargetYield.mutate({ id: position.id, targetYieldPct: parsed })
+  }
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -81,6 +96,53 @@ export function PositionDetailPage({
           </span>
         )}
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Valuation (DY-alvo)</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="target-yield">Yield-alvo anual (%)</Label>
+            <Input
+              id="target-yield"
+              type="number"
+              step="0.1"
+              min="0"
+              className="w-24"
+              value={targetYieldInput}
+              onChange={(e) => setTargetYieldInput(e.target.value)}
+              onBlur={handleTargetYieldBlur}
+            />
+          </div>
+
+          {position.valuation ? (
+            <div className="flex flex-wrap gap-4 text-sm">
+              <span className="tabular-nums">
+                Dividendos 12m: {formatCents(position.valuation.dividends_last_12m_cents)}
+              </span>
+              <span className="tabular-nums">
+                Preço-teto: {formatCents(position.valuation.price_ceiling_cents)}
+              </span>
+              <span
+                className={
+                  position.valuation.is_undervalued
+                    ? 'tabular-nums text-success'
+                    : 'tabular-nums text-destructive'
+                }
+              >
+                Margem de segurança: {position.valuation.margin_of_safety_pct.toFixed(1)}% (
+                {position.valuation.is_undervalued ? 'subvalorizado' : 'sobrevalorizado'})
+              </span>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              defina o yield-alvo e garanta preço atual + dividendos nos últimos 12 meses para
+              calcular o preço-teto
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {isLoading && <Skeleton className="h-[220px] w-full" />}
 

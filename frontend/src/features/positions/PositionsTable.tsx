@@ -55,6 +55,7 @@ export function PositionsTable({
                 <TableHead className="text-right">Preço médio</TableHead>
                 <TableHead className="text-right">Preço atual</TableHead>
                 <TableHead className="text-right">Total return</TableHead>
+                <TableHead className="text-right">Margem de segurança</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -94,6 +95,19 @@ export function PositionsTable({
                         <span className="text-muted-foreground">
                           ({position.total_return.total_return_pct.toFixed(2)}%)
                         </span>
+                      </span>
+                    ) : (
+                      '—'
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {position.valuation ? (
+                      <span
+                        className={
+                          position.valuation.is_undervalued ? 'text-success' : 'text-destructive'
+                        }
+                      >
+                        {position.valuation.margin_of_safety_pct.toFixed(1)}%
                       </span>
                     ) : (
                       '—'
