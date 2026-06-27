@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { getCardBrandIcon } from '@/features/cards/card-brand-icons'
 import { useCards } from '@/features/cards/useCards'
 import { useCategories } from '@/features/categories/useCategories'
 import type { PeriodPreset } from './periodPresets'
@@ -183,11 +184,20 @@ export function TransactionsPage() {
                     <TableCell>
                       {card && (
                         <span className="inline-flex items-center gap-1.5">
-                          <span
-                            className="size-2 rounded-full"
-                            style={{ backgroundColor: card.color }}
-                            aria-hidden
-                          />
+                          {getCardBrandIcon(card.name) ? (
+                            <img
+                              src={getCardBrandIcon(card.name)!}
+                              alt=""
+                              className="size-4 rounded-full object-cover"
+                              aria-hidden
+                            />
+                          ) : (
+                            <span
+                              className="size-2 rounded-full"
+                              style={{ backgroundColor: card.color }}
+                              aria-hidden
+                            />
+                          )}
                           {card.name}
                         </span>
                       )}
@@ -225,11 +235,20 @@ export function TransactionsPage() {
                     <span className="flex items-center gap-2">
                       {card && (
                         <span className="inline-flex items-center gap-1.5">
-                          <span
-                            className="size-2 rounded-full"
-                            style={{ backgroundColor: card.color }}
-                            aria-hidden
-                          />
+                          {getCardBrandIcon(card.name) ? (
+                            <img
+                              src={getCardBrandIcon(card.name)!}
+                              alt=""
+                              className="size-4 rounded-full object-cover"
+                              aria-hidden
+                            />
+                          ) : (
+                            <span
+                              className="size-2 rounded-full"
+                              style={{ backgroundColor: card.color }}
+                              aria-hidden
+                            />
+                          )}
                           {card.name}
                         </span>
                       )}
