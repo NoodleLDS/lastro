@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
-import { apiGet } from '@/lib/api'
+import { apiGet, apiPost } from '@/lib/api'
 
 const evolutionPointSchema = z.object({
   month: z.string(),
@@ -24,5 +24,13 @@ export function useEvolution() {
   return useQuery({
     queryKey: ['dashboard', 'evolution'],
     queryFn: async () => evolutionResponseSchema.parse(await apiGet('/dashboard/evolution')),
+  })
+}
+
+export function useCreateSnapshot() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async () => apiPost('/snapshots', {}),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['dashboard', 'evolution'] }),
   })
 }

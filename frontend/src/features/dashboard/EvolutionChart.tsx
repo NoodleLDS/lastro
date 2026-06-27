@@ -1,5 +1,5 @@
 import { animate, motion, useMotionValue, useTransform } from 'framer-motion'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import {
   CartesianGrid,
   Line,
@@ -10,10 +10,11 @@ import {
   YAxis,
 } from 'recharts'
 import { PercentValue } from '@/components/money-value'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatCents } from '@/lib/format'
-import { useEvolution } from './useEvolution'
+import { useCreateSnapshot, useEvolution } from './useEvolution'
 
 function CountUpValue({ cents }: { cents: number }) {
   const value = useMotionValue(0)
@@ -29,6 +30,17 @@ function CountUpValue({ cents }: { cents: number }) {
 
 export function EvolutionChart() {
   const { data, isLoading } = useEvolution()
+  const createSnapshot = useCreateSnapshot()
+  const [justUpdated, setJustUpdated] = useState(false)
+
+  function handleCreateSnapshot() {
+    createSnapshot.mutate(undefined, {
+      onSuccess: () => {
+        setJustUpdated(true)
+        setTimeout(() => setJustUpdated(false), 2500)
+      },
+    })
+  }
 
   if (isLoading) {
     return (
@@ -44,7 +56,30 @@ export function EvolutionChart() {
     )
   }
   if (!data || data.points.length === 0) {
-    return <p className="text-muted-foreground">nenhum snapshot registrado ainda</p>
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Evolução do patrimônio</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <p className="text-muted-foreground">
+            Nenhum snapshot registrado ainda. O snapshot do mês é criado automaticamente quando a
+            API inicia, mas você também pode registrar um agora.
+          </p>
+          <Button
+            className="self-start"
+            onClick={handleCreateSnapshot}
+            disabled={createSnapshot.isPending}
+          >
+            {createSnapshot.isPending
+              ? 'Registrando...'
+              : justUpdated
+                ? 'Snapshot registrado!'
+                : 'Registrar snapshot deste mês'}
+          </Button>
+        </CardContent>
+      </Card>
+    )
   }
 
   const lastPoint = data.points[data.points.length - 1]
@@ -55,8 +90,20 @@ export function EvolutionChart() {
 
   return (
     <Card className="w-full">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Evolução do patrimônio</CardTitle>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleCreateSnapshot}
+          disabled={createSnapshot.isPending}
+        >
+          {createSnapshot.isPending
+            ? 'Atualizando...'
+            : justUpdated
+              ? 'Atualizado!'
+              : 'Atualizar snapshot'}
+        </Button>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <p className="text-2xl font-semibold">
