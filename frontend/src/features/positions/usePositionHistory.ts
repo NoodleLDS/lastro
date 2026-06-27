@@ -3,11 +3,13 @@ import { z } from 'zod'
 import { apiGet } from '@/lib/api'
 
 const positionEventSchema = z.object({
-  type: z.enum(['contribution', 'sale', 'dividend']),
+  type: z.enum(['contribution', 'sale', 'dividend', 'stock_split']),
   date: z.string(),
   quantity: z.number().nullable(),
   unit_price_cents: z.number().nullable(),
   amount_cents: z.number().nullable(),
+  ratio_from: z.number().nullable().optional(),
+  ratio_to: z.number().nullable().optional(),
 })
 
 const pricePointSchema = z.object({

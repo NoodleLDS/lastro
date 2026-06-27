@@ -11,6 +11,7 @@ from lastro.models.position import AssetType, Position
 from lastro.models.price_history import PriceHistory
 from lastro.models.price_snapshot import PriceSnapshot
 from lastro.models.sale import Sale
+from lastro.models.stock_split import StockSplit
 from lastro.models.transaction import Transaction, TransactionSource, TransactionStatus
 from lastro.models.variable_expense import VariableExpense
 
@@ -29,6 +30,7 @@ __all__ = [
     "PriceHistory",
     "PriceSnapshot",
     "Sale",
+    "StockSplit",
     "Transaction",
     "TransactionSource",
     "TransactionStatus",

@@ -31,6 +31,7 @@ const EVENT_LABEL: Record<string, string> = {
   contribution: 'Compra',
   sale: 'Venda',
   dividend: 'Dividendo',
+  stock_split: 'Desdobramento',
 }
 
 export function PositionDetailPage({
@@ -187,7 +188,11 @@ export function PositionDetailPage({
                   >
                     <TableCell>{event.date}</TableCell>
                     <TableCell>{EVENT_LABEL[event.type]}</TableCell>
-                    <TableCell>{event.quantity ?? '—'}</TableCell>
+                    <TableCell>
+                      {event.type === 'stock_split'
+                        ? `${event.ratio_from} → ${event.ratio_to}`
+                        : (event.quantity ?? '—')}
+                    </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {event.unit_price_cents !== null
                         ? formatCents(event.unit_price_cents)

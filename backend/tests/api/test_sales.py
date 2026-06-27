@@ -8,10 +8,20 @@ async def _create_position(client: AsyncClient, quantity: float = 100) -> dict:
             "ticker": "CPTS11",
             "name": "Capitania Securities II",
             "asset_type": "fii",
-            "quantity": quantity,
         },
     )
-    return response.json()
+    position = response.json()
+    if quantity:
+        await client.post(
+            "/contributions",
+            json={
+                "position_id": position["id"],
+                "date": "2026-01-01",
+                "quantity": quantity,
+                "unit_price_cents": 1000,
+            },
+        )
+    return position
 
 
 async def test_create_sale_reduz_quantity_da_posicao(client: AsyncClient) -> None:

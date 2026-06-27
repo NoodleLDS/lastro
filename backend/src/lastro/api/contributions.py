@@ -12,7 +12,7 @@ from lastro.schemas.contribution import (
 )
 from lastro.services.analytics.aporte import ContributionPreview, distribute_contribution
 from lastro.services.portfolio.price_history import record_price_point
-from lastro.services.portfolio.quantity import apply_quantity_delta
+from lastro.services.portfolio.quantity import sync_position_quantity
 
 router = APIRouter(prefix="/contributions", tags=["contributions"])
 
@@ -53,8 +53,9 @@ async def create_contribution(
 
     contribution = Contribution(**payload.model_dump())
     session.add(contribution)
-    await apply_quantity_delta(session, payload.position_id, payload.quantity)
     await record_price_point(session, payload.position_id, payload.date, payload.unit_price_cents)
+    await session.flush()
+    await sync_position_quantity(session, payload.position_id)
     await session.commit()
     await session.refresh(contribution)
     return contribution
@@ -68,6 +69,8 @@ async def delete_contribution(
     if contribution is None:
         raise HTTPException(status_code=404, detail="aporte não encontrado")
 
-    await apply_quantity_delta(session, contribution.position_id, -contribution.quantity)
+    position_id = contribution.position_id
     await session.delete(contribution)
+    await session.flush()
+    await sync_position_quantity(session, position_id)
     await session.commit()

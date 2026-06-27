@@ -55,6 +55,18 @@ export function useRefreshQuotes() {
   })
 }
 
+export function useCreatePosition() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { ticker: string; name: string; asset_type: string }) =>
+      positionSchema.parse(await apiPost('/positions', input)),
+    onSuccess: (position) => {
+      queryClient.setQueryData<Position[]>(['positions'], (old) => [...(old ?? []), position])
+      queryClient.invalidateQueries({ queryKey: ['positions'] })
+    },
+  })
+}
+
 export function useUpdateTargetYield() {
   const queryClient = useQueryClient()
   return useMutation({

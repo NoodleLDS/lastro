@@ -22,9 +22,20 @@ async def _create_position(
 ) -> dict:
     response = await client.post(
         "/positions",
-        json={"ticker": ticker, "name": ticker, "asset_type": asset_type, "quantity": quantity},
+        json={"ticker": ticker, "name": ticker, "asset_type": asset_type},
     )
-    return response.json()
+    position = response.json()
+    if quantity:
+        await client.post(
+            "/contributions",
+            json={
+                "position_id": position["id"],
+                "date": "2026-01-01",
+                "quantity": quantity,
+                "unit_price_cents": 1000,
+            },
+        )
+    return position
 
 
 async def test_allocation_endpoint_retorna_breakdown_com_desvio(

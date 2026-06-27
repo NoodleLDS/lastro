@@ -3,11 +3,13 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from lastro.db import get_session
+from lastro.models.contribution import Contribution
 from lastro.models.position import Position
 from lastro.models.sale import Sale
+from lastro.models.stock_split import StockSplit
 from lastro.schemas.sale import SaleCreate, SaleRead
 from lastro.services.portfolio.price_history import record_price_point
-from lastro.services.portfolio.quantity import apply_quantity_delta
+from lastro.services.portfolio.quantity import calculate_quantity, sync_position_quantity
 
 router = APIRouter(prefix="/sales", tags=["sales"])
 
@@ -32,19 +34,31 @@ async def create_sale(payload: SaleCreate, session: AsyncSession = Depends(get_s
     position = await session.get(Position, payload.position_id)
     if position is None:
         raise HTTPException(status_code=422, detail="position_id não encontrada")
-    if payload.quantity > position.quantity:
+
+    contributions_result = await session.exec(
+        select(Contribution).where(Contribution.position_id == payload.position_id)
+    )
+    sales_result = await session.exec(select(Sale).where(Sale.position_id == payload.position_id))
+    splits_result = await session.exec(
+        select(StockSplit).where(StockSplit.position_id == payload.position_id)
+    )
+    current_quantity = calculate_quantity(
+        list(contributions_result.all()), list(sales_result.all()), list(splits_result.all())
+    )
+    if payload.quantity > current_quantity:
         raise HTTPException(
             status_code=422,
             detail=(
                 f"quantity ({payload.quantity}) excede a quantidade atual da posição "
-                f"({position.quantity})"
+                f"({current_quantity})"
             ),
         )
 
     sale = Sale(**payload.model_dump())
     session.add(sale)
-    await apply_quantity_delta(session, payload.position_id, -payload.quantity)
     await record_price_point(session, payload.position_id, payload.date, payload.unit_price_cents)
+    await session.flush()
+    await sync_position_quantity(session, payload.position_id)
     await session.commit()
     await session.refresh(sale)
     return sale
@@ -56,6 +70,8 @@ async def delete_sale(sale_id: int, session: AsyncSession = Depends(get_session)
     if sale is None:
         raise HTTPException(status_code=404, detail="venda não encontrada")
 
-    await apply_quantity_delta(session, sale.position_id, sale.quantity)
+    position_id = sale.position_id
     await session.delete(sale)
+    await session.flush()
+    await sync_position_quantity(session, position_id)
     await session.commit()

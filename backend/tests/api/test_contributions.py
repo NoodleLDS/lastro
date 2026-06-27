@@ -111,3 +111,35 @@ async def test_create_contribution_rejeita_position_id_inexistente(client: Async
         },
     )
     assert response.status_code == 422
+
+
+async def test_quantity_nao_duplica_ao_criar_position_com_quantity_ignorado(
+    client: AsyncClient,
+) -> None:
+    """Position não aceita mais quantity solta na criação — quantity é
+    sempre derivada do extrato de Contribution/Sale/StockSplit, então criar
+    a posição e registrar dois aportes reais nunca pode dobrar o total."""
+    position = await _create_position(client)
+    assert position["quantity"] == 0
+
+    await client.post(
+        "/contributions",
+        json={
+            "position_id": position["id"],
+            "date": "2026-01-01",
+            "quantity": 100,
+            "unit_price_cents": 1800,
+        },
+    )
+    await client.post(
+        "/contributions",
+        json={
+            "position_id": position["id"],
+            "date": "2026-02-01",
+            "quantity": 50,
+            "unit_price_cents": 1900,
+        },
+    )
+
+    positions = (await client.get("/positions")).json()
+    assert positions[0]["quantity"] == 150

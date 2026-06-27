@@ -15,9 +15,20 @@ class _FakeQuoteProvider:
 async def test_create_snapshot_inclui_carteira_e_reserva(
     client: AsyncClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    position = (
+        await client.post(
+            "/positions",
+            json={"ticker": "BBAS3", "name": "Banco do Brasil", "asset_type": "stock"},
+        )
+    ).json()
     await client.post(
-        "/positions",
-        json={"ticker": "BBAS3", "name": "Banco do Brasil", "asset_type": "stock", "quantity": 311},
+        "/contributions",
+        json={
+            "position_id": position["id"],
+            "date": "2026-01-01",
+            "quantity": 311,
+            "unit_price_cents": 1000,
+        },
     )
 
     monkeypatch.setattr(

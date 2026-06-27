@@ -10,6 +10,7 @@ from lastro.models.dividend import Dividend
 from lastro.models.position import AssetType, Position
 from lastro.models.price_history import PriceHistory
 from lastro.models.sale import Sale
+from lastro.models.stock_split import StockSplit
 from lastro.schemas.position import (
     PositionCreate,
     PositionEvent,
@@ -24,6 +25,7 @@ from lastro.services.analytics.total_return import calculate_total_return
 from lastro.services.analytics.valuation import calculate_valuation
 from lastro.services.portfolio.average_price import calculate_average_price_cents
 from lastro.services.portfolio.price_history import record_price_point
+from lastro.services.portfolio.quantity import calculate_quantity
 from lastro.services.quotes.dependency import get_quote_provider
 
 router = APIRouter(prefix="/positions", tags=["positions"])
@@ -44,18 +46,25 @@ async def _sales_for(session: AsyncSession, position_id: int) -> list[Sale]:
     return list(result.all())
 
 
+async def _stock_splits_for(session: AsyncSession, position_id: int) -> list[StockSplit]:
+    result = await session.exec(select(StockSplit).where(StockSplit.position_id == position_id))
+    return list(result.all())
+
+
 async def _to_position_read(session: AsyncSession, position: Position) -> PositionRead:
     contributions = await _contributions_for(session, position.id)
-    average_price_cents = calculate_average_price_cents(contributions)
+    sales = await _sales_for(session, position.id)
+    splits = await _stock_splits_for(session, position.id)
+    average_price_cents = calculate_average_price_cents(contributions, splits)
+    quantity = calculate_quantity(contributions, sales, splits)
 
     total_return = None
     magic_number = None
     valuation = None
     if position.last_price_cents is not None:
         dividends = await _dividends_for(session, position.id)
-        sales = await _sales_for(session, position.id)
         total_return = calculate_total_return(
-            contributions, dividends, position.last_price_cents, sales
+            contributions, dividends, position.last_price_cents, sales, splits
         )
         magic_number = calculate_magic_number(dividends, position.last_price_cents, date.today())
         valuation = calculate_valuation(
@@ -67,7 +76,7 @@ async def _to_position_read(session: AsyncSession, position: Position) -> Positi
         ticker=position.ticker,
         name=position.name,
         asset_type=position.asset_type,
-        quantity=position.quantity,
+        quantity=quantity,
         is_active=position.is_active,
         average_price_cents=average_price_cents,
         last_price_cents=position.last_price_cents,
@@ -138,6 +147,7 @@ async def get_position_history(
     contributions = await _contributions_for(session, position_id)
     sales = await _sales_for(session, position_id)
     dividends = await _dividends_for(session, position_id)
+    splits = await _stock_splits_for(session, position_id)
 
     events = [
         PositionEvent(
@@ -160,6 +170,15 @@ async def get_position_history(
     events += [
         PositionEvent(type=PositionEventType.DIVIDEND, date=d.date, amount_cents=d.amount_cents)
         for d in dividends
+    ]
+    events += [
+        PositionEvent(
+            type=PositionEventType.STOCK_SPLIT,
+            date=sp.date,
+            ratio_from=sp.ratio_from,
+            ratio_to=sp.ratio_to,
+        )
+        for sp in splits
     ]
     events.sort(key=lambda e: e.date)
 

@@ -5,6 +5,7 @@ import pytest
 from lastro.models.contribution import Contribution
 from lastro.models.dividend import Dividend
 from lastro.models.sale import Sale
+from lastro.models.stock_split import StockSplit
 from lastro.services.analytics.total_return import calculate_total_return
 
 
@@ -87,3 +88,17 @@ def test_total_return_com_venda_no_prejuizo_reduz_resultado() -> None:
 
     # prejuízo realizado: 40 * (1500 - 2000) = -20000
     assert result.realized_gain_cents == -20000
+
+
+def test_total_return_com_split_apos_aporte_preserva_valor_investido() -> None:
+    # comprou 100 cotas a R$20 (R$2000 investido); split 1->2 dobra para 200 a R$10
+    contributions = [_contribution(100, 2000)]
+    splits = [StockSplit(position_id=1, date=date(2026, 1, 15), ratio_from=1, ratio_to=2)]
+
+    result = calculate_total_return(
+        contributions, dividends=[], current_price_cents=1200, splits=splits
+    )
+
+    assert result.invested_cents == 200000
+    assert result.current_value_cents == 240000
+    assert result.price_appreciation_cents == 40000

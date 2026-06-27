@@ -160,9 +160,7 @@ async def test_history_position_not_found(client: AsyncClient) -> None:
 async def test_update_position_seta_target_yield_pct(client: AsyncClient) -> None:
     position = await _create_position(client)
 
-    response = await client.patch(
-        f"/positions/{position['id']}", json={"target_yield_pct": 8.5}
-    )
+    response = await client.patch(f"/positions/{position['id']}", json={"target_yield_pct": 8.5})
     assert response.status_code == 200
     assert response.json()["target_yield_pct"] == 8.5
 
@@ -192,9 +190,7 @@ async def test_valuation_aparece_quando_preco_dividendo_e_target_yield_disponive
         )
 
     # simula cotação já atualizada (sem chamar provider externo em teste)
-    db_position = (
-        await session.exec(select(Position).where(Position.id == position["id"]))
-    ).one()
+    db_position = (await session.exec(select(Position).where(Position.id == position["id"]))).one()
     db_position.last_price_cents = 1000
     session.add(db_position)
     await session.commit()

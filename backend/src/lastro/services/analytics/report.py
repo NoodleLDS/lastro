@@ -33,8 +33,12 @@ def _year_month_bounds(
 
 
 def _within_year_month(
-    year: int, month: int, year_from: int | None, month_from: int | None,
-    year_to: int | None, month_to: int | None,
+    year: int,
+    month: int,
+    year_from: int | None,
+    month_from: int | None,
+    year_to: int | None,
+    month_to: int | None,
 ) -> bool:
     key = (year, month)
     if year_from is not None and month_from is not None and key < (year_from, month_from):
@@ -96,7 +100,8 @@ async def build_report(
         statement = select(Income)
         result = await session.exec(statement)
         incomes = [
-            i for i in result.all()
+            i
+            for i in result.all()
             if _within_year_month(i.year, i.month, year_from, month_from, year_to, month_to)
         ]
         report.incomes = [IncomeRead.model_validate(i) for i in incomes]
@@ -107,7 +112,8 @@ async def build_report(
             statement = statement.where(FixedExpense.category_id == category_id)
         result = await session.exec(statement)
         expenses = [
-            e for e in result.all()
+            e
+            for e in result.all()
             if _within_year_month(e.year, e.month, year_from, month_from, year_to, month_to)
         ]
         report.fixed_expenses = [FixedExpenseRead.model_validate(e) for e in expenses]
@@ -118,7 +124,8 @@ async def build_report(
             statement = statement.where(VariableExpense.category_id == category_id)
         result = await session.exec(statement)
         expenses = [
-            e for e in result.all()
+            e
+            for e in result.all()
             if _within_year_month(e.year, e.month, year_from, month_from, year_to, month_to)
         ]
         report.variable_expenses = [VariableExpenseRead.model_validate(e) for e in expenses]

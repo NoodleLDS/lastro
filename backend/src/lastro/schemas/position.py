@@ -14,7 +14,6 @@ class PositionCreate(BaseModel):
     ticker: str
     name: str
     asset_type: AssetType
-    quantity: float = 0
 
 
 class PositionUpdate(BaseModel):
@@ -43,6 +42,7 @@ class PositionEventType(StrEnum):
     CONTRIBUTION = "contribution"
     SALE = "sale"
     DIVIDEND = "dividend"
+    STOCK_SPLIT = "stock_split"
 
 
 class PositionEvent(BaseModel):
@@ -51,6 +51,8 @@ class PositionEvent(BaseModel):
     quantity: float | None = None
     unit_price_cents: int | None = None
     amount_cents: int | None = None
+    ratio_from: float | None = None
+    ratio_to: float | None = None
 
 
 class PricePoint(BaseModel):

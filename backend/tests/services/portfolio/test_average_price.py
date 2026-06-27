@@ -1,6 +1,7 @@
 from datetime import date
 
 from lastro.models.contribution import Contribution
+from lastro.models.stock_split import StockSplit
 from lastro.services.portfolio.average_price import calculate_average_price_cents
 
 
@@ -27,3 +28,10 @@ def test_preco_medio_com_um_unico_aporte() -> None:
     contributions = [_contribution(10, 5000)]
 
     assert calculate_average_price_cents(contributions) == 5000
+
+
+def test_preco_medio_ajustado_por_split_posterior_ao_aporte() -> None:
+    contributions = [_contribution(100, 4000)]
+    splits = [StockSplit(position_id=1, date=date(2026, 6, 1), ratio_from=1, ratio_to=2)]
+
+    assert calculate_average_price_cents(contributions, splits) == 2000
