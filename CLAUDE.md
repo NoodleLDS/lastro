@@ -159,4 +159,6 @@ Preço-teto: Gordon (ação) e DY-alvo (FII) → margem de segurança → veredi
 - Não gravar valor de dinheiro vindo de IA sem preview humano.
 
 ## BACKLOG (v2+, fora de escopo agora)
-Parser de export OFX/CSV dos bancos · swap tributário (BBDC4→ITUB4 dentro da isenção R$20k) · scraping de fundamentos · Markowitz/otimização por risco · calendário de proventos · multi-usuário.
+Parser de export OFX/CSV dos bancos · swap tributário (BBDC4→ITUB4 dentro da isenção R$20k) · scraping de fundamentos · Markowitz/otimização por risco · calendário de proventos · multi-usuário · regras de transação com condições compostas (valor + conta + tag, inspirado no motor de regras do Firefly III — só vale promover se as ~40 regras atuais da planilha colidirem ou precisarem de exceção, hoje string match basta).
+
+> **Stock split (desdobramento/grupamento)** implementado em 2026-06-27 — saiu do backlog (era inspirado no Investbrain). Modelo `StockSplit`, ajuste de quantidade/preço médio/total return via `services/portfolio/stock_split.py`, endpoint `/stock-splits`, evento no extrato da posição.
