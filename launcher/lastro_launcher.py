@@ -13,7 +13,9 @@ import httpx
 # então não derivamos isso de __file__/sys.executable.
 PROJECT_ROOT = Path(r"C:\Users\Lucas\Downloads\lastro")
 LOG_PATH = PROJECT_ROOT / "launcher" / "lastro_launcher.log"
-SYMBOL_PATH = PROJECT_ROOT / "frontend" / "public" / "branding" / "lastro-symbol.png"
+LOGO_PATH = (
+    PROJECT_ROOT / "frontend" / "public" / "branding" / "lastro-logo-horizontal-dark-bg.png"
+)
 WEB_URL = "http://localhost:5173"
 API_HEALTH_URL = "http://localhost:8000/health"
 CHROME_PATHS = [
@@ -77,25 +79,17 @@ class LoadingWindow:
     def __init__(self) -> None:
         self.root = tk.Tk()
         self.root.title("Lastro")
-        self.root.geometry("360x220")
+        self.root.geometry("420x220")
         self.root.resizable(False, False)
         self.root.configure(bg="#14110f")
         self._center()
 
-        if SYMBOL_PATH.exists():
-            self._image = tk.PhotoImage(file=str(SYMBOL_PATH))
+        if LOGO_PATH.exists():
+            self._image = tk.PhotoImage(file=str(LOGO_PATH))
             self._image = self._image.subsample(
-                max(1, self._image.width() // 96), max(1, self._image.height() // 96)
+                max(1, self._image.width() // 240), max(1, self._image.height() // 80)
             )
-            tk.Label(self.root, image=self._image, bg="#14110f").pack(pady=(24, 8))
-
-        tk.Label(
-            self.root,
-            text="Lastro",
-            fg="#f1ece6",
-            bg="#14110f",
-            font=("Segoe UI", 16, "bold"),
-        ).pack()
+            tk.Label(self.root, image=self._image, bg="#14110f").pack(pady=(32, 16))
 
         self.status_label = tk.Label(
             self.root,
@@ -108,7 +102,7 @@ class LoadingWindow:
 
     def _center(self) -> None:
         self.root.update_idletasks()
-        width, height = 360, 220
+        width, height = 420, 220
         x = (self.root.winfo_screenwidth() // 2) - (width // 2)
         y = (self.root.winfo_screenheight() // 2) - (height // 2)
         self.root.geometry(f"{width}x{height}+{x}+{y}")
