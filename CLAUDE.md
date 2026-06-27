@@ -138,6 +138,15 @@ Evolução do patrimônio (realizado + projeção). Comparativo carteira vs CDI/
 
 > ⛔ **MVP GATE — usar o app de verdade por algumas semanas antes de seguir.**
 
+#### Fase 3b — Resumo financeiro geral (extensão pós-MVP, 2026-06-27)
+Inspirado no dashboard da planilha antiga (`GestorFinanceiro2026.xlsx`). O Dashboard original (Fase 3) só cobria carteira/investimentos — faltava a visão de fluxo de caixa do mês. Adiciona, no topo do Dashboard (acima da Evolução do patrimônio):
+- Cards mensais: receita, despesas, total aportado, saldo do mês.
+- Cards anuais: receita, despesas, saldo do ano.
+- Reserva de emergência: valor guardado (editável), despesa média dos últimos 3 meses, quantos meses de reserva isso cobre.
+- Tabela categoria × cartão do mês (gasto por categoria em cada cartão, como na planilha).
+Endpoint novo `/dashboard/financial-summary?year=&month=`; `EmergencyReserve` ganha schema + endpoint CRUD (existia no model desde sempre, mas nunca foi exposto). Aporte sugerido (calculado pela planilha) fica de fora por ora — é território do motor de aporte (Fase 5), que já tem regras próprias.
+**DoD:** mesmo padrão da Fase 3 — todos os números derivam do banco, testes cobrindo a agregação nova.
+
 ### Fase 4 — IA de categorização
 LLM só pro desconhecido, salvando a decisão como `MerchantRule`. **Métrica:** % resolvido sem IA (alvo >90% em 2 meses).
 

@@ -1,12 +1,15 @@
 import { AllocationTargetForm } from '@/features/allocation-targets/AllocationTargetForm'
 import { AllocationChart } from './AllocationChart'
 import { EvolutionChart } from './EvolutionChart'
+import { FinancialSummaryCards } from './FinancialSummaryCards'
 import { FireSimulator } from './FireSimulator'
 import { ProjectionSimulator } from './ProjectionSimulator'
 
 export function DashboardPage() {
   return (
     <div className="flex w-full flex-col gap-6">
+      <FinancialSummaryCards />
+
       <EvolutionChart />
 
       <div className="flex flex-col gap-2">
