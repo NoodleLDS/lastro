@@ -11,12 +11,12 @@ interface QuickEntryInputProps {
 
 export function QuickEntryInput({ cardId, cardName }: QuickEntryInputProps) {
   const [raw, setRaw] = useState('')
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
   const quickEntry = useQuickEntry()
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
-    const today = new Date().toISOString().slice(0, 10)
-    quickEntry.mutate({ card_id: cardId, raw, date: today }, { onSuccess: () => setRaw('') })
+    quickEntry.mutate({ card_id: cardId, raw, date }, { onSuccess: () => setRaw('') })
   }
 
   return (
@@ -31,6 +31,12 @@ export function QuickEntryInput({ cardId, cardName }: QuickEntryInputProps) {
             value={raw}
             onChange={(e) => setRaw(e.target.value)}
             autoFocus
+          />
+          <Input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-40 shrink-0"
           />
           <Button type="submit" disabled={quickEntry.isPending || !raw.trim()}>
             Lançar
