@@ -156,6 +156,13 @@ Encode das regras: CPTS prioridade · rotação XPML↔HGLG · BBAS3 pausada (RO
 ### Fase 6 — Valuation + número mágico
 Preço-teto: Gordon (ação) e DY-alvo (FII) → margem de segurança → veredito. Número mágico por ativo. Analista IA in-app (master prompt + dados vivos).
 
+#### Extensões pós-roadmap (2026-06-28)
+Com as 7 fases originais fechadas, seguem ajustes incrementais sem mudança de escopo:
+- **Autenticação real + painel admin.** Login deixou de ser decorativo: usuário admin único, bootstrap a partir do `.env`, JWT (`bcrypt` + `pyjwt`), middleware exige token em toda rota exceto `/health` e `/auth/login`. Painel admin no front (ícone de engrenagem) permite reiniciar/encerrar os containers Docker via servidor de controle HTTP no launcher (porta 9100) — não muda a arquitetura single-user, é só a porta de entrada deixar de ser decorativa.
+- **Cotação do Tesouro Direto.** Antes ficava fora do refresh automático (só renda variável tinha preço live). Passa a buscar no CSV oficial do Tesouro Transparente (`services/quotes/tesouro_direto.py`).
+- **Vision de fatura via Ollama.** A extração de fatura por print, que era só Claude API opt-in, passa a funcionar com modelo local (`qwen2.5vl:3b` via Ollama) — reduz a dependência da nuvem para essa funcionalidade. Claude API continua disponível como opt-in.
+- **Memória e contexto do analista.** O chat do analista (Fase 6) ganhou conversas múltiplas e nomeadas (estilo Claude Projects), com histórico persistido em banco (`Conversation`/`Message`) reenviado ao modelo a cada pergunta — antes cada pergunta era isolada. Instruções personalizadas editáveis (`AnalystInstructions`) complementam o master prompt sem substituí-lo. Painel de contexto mostra a "Memória" (somente leitura: master prompt + dados vivos da carteira que de fato entram no prompt, via `GET /analyst/memory`) e as "Instruções" (edição inline).
+
 ---
 
 ## NÃO FAZER (anti-scope-creep)

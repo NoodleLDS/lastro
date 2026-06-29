@@ -2,14 +2,15 @@
 
 Local personal finance and net worth management app. Single-user, runs on your own machine — no cloud, no remote server, no third party seeing your financial data.
 
-Replaces a spreadsheet: data lives in a SQLite database, quotes come in live (B3, crypto, CDI/Selic/IPCA), and a local AI layer (Ollama) categorizes transactions and answers as a financial analyst.
+Replaces a spreadsheet: data lives in a SQLite database, quotes come in live (B3, crypto, CDI/Selic/IPCA, Tesouro Direto), and a local AI layer (Ollama) categorizes transactions, reads bill screenshots, and answers as a financial analyst with memory of past conversations.
 
 ## Stack
 
 - **Backend** — Python 3.12+, FastAPI, SQLModel, SQLite, Alembic (`uv` as package manager)
 - **Frontend** — React 19 + TypeScript, Vite, Tailwind, shadcn/ui (`pnpm`)
-- **AI** — local Ollama (default) or Claude API (opt-in, only for reading a bill from a screenshot)
-- **Quotes** — brapi.dev (B3), CoinGecko (crypto), BCB-SGS (CDI/Selic/IPCA)
+- **AI** — local Ollama (default, including a vision model for reading bill screenshots) or Claude API (opt-in)
+- **Auth** — single admin user, JWT-based login (bootstrapped from `.env`, no external identity provider)
+- **Quotes** — brapi.dev (B3), CoinGecko (crypto), BCB-SGS (CDI/Selic/IPCA), Tesouro Transparente (Tesouro Direto)
 - **Deploy** — Docker Compose (`api` + `web` + `ollama`), everything local
 
 Architecture details, domain invariants, and the phase roadmap live in [`CLAUDE.md`](./CLAUDE.md).
@@ -44,6 +45,8 @@ just dev-web     # pnpm dev (frontend/)
 
 > Don't run `dev-api` and the Docker `api` container at the same time — they compete for port 8000 and write to different databases (this caused a previous data loss in this project). Stop the container (`docker compose stop api`) before running locally.
 
+First run creates the admin user automatically from `ADMIN_USERNAME` / `ADMIN_PASSWORD` in `backend/.env`.
+
 ## Useful commands (`justfile`)
 
 ```
@@ -70,6 +73,13 @@ lastro/
 └── CLAUDE.md       # architecture, invariants, phases, work protocol
 ```
 
+## AI analyst: memory and instructions
+
+The analyst chat (tab "Analista") keeps separate, named conversations — each one persists its own message history, which is replayed to the model on every new question in that conversation. A context panel (brain icon) shows:
+
+- **Memória** (read-only) — the actual master prompt and live portfolio data sent to the model on every question, for auditing.
+- **Instruções** (editable) — free-text instructions that complement the master prompt (e.g. "always answer in 3 sentences"). They never replace the fixed financial profile/rules.
+
 ## Data and privacy
 
-The whole database lives in a local Docker volume (`lastro-db`), never on shared disk or in the cloud. The AI layer is opt-in for Claude API and only used for reading a bill from a screenshot — by default everything runs on local Ollama. No financial value coming from AI writes directly to the database: it always goes through a preview the user can edit.
+The whole database lives in a local Docker volume (`lastro-db`), never on shared disk or in the cloud. By default everything — categorization, bill screenshot reading, the analyst chat — runs on local Ollama; Claude API is opt-in and never required. No financial value coming from AI writes directly to the database: it always goes through a preview the user can edit.
