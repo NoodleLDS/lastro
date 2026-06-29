@@ -3,6 +3,7 @@ from datetime import date
 import pytest
 from httpx import AsyncClient
 
+from lastro.core.config import settings
 from lastro.main import app
 from lastro.services.llm.dependency import get_llm_provider
 from lastro.services.llm.provider import VisionExtractedItem
@@ -70,8 +71,13 @@ async def test_vision_preview_nao_aparece_na_listagem_default(client: AsyncClien
     assert len(response.json()) == 1
 
 
-async def test_vision_preview_sem_chave_configurada_retorna_400(client: AsyncClient) -> None:
+async def test_vision_preview_claude_sem_chave_configurada_retorna_400(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
     card = await _create_card(client)
+    monkeypatch.setattr(settings, "llm_provider", "claude")
+    monkeypatch.setattr(settings, "anthropic_api_key", None)
+    app.dependency_overrides.pop(get_llm_provider, None)
 
     response = await client.post(
         "/transactions/vision-preview",

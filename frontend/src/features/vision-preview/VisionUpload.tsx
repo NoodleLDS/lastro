@@ -32,9 +32,20 @@ export function VisionUpload({ cardId }: VisionUploadProps) {
         onClick={() => inputRef.current?.click()}
         disabled={upload.isPending}
       >
-        {upload.isPending ? 'Lendo fatura...' : 'Lançar por print'}
+        {upload.isPending ? 'Analisando fatura...' : 'Lançar por print'}
       </Button>
-      {upload.isError && <p className="text-sm text-destructive">{upload.error.message}</p>}
+      {upload.isPending && (
+        <p className="text-sm text-muted-foreground">
+          Modelo local pode levar 1-2 minutos para analisar a imagem. Não recarregue a página.
+        </p>
+      )}
+      {upload.isError && (
+        <p className="text-sm text-destructive">
+          {upload.error.message === 'Failed to fetch'
+            ? 'Não foi possível conectar à API. Verifique se o app (Docker) está rodando e tente novamente.'
+            : upload.error.message}
+        </p>
+      )}
     </div>
   )
 }
