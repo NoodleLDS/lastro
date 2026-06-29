@@ -29,7 +29,7 @@ export function useAskAnalystStream() {
   const [state, setState] = useState<StreamState>(initialState)
   const abortRef = useRef<AbortController | null>(null)
 
-  const ask = useCallback(async (question: string) => {
+  const ask = useCallback(async (question: string, conversationId: number | null) => {
     abortRef.current?.abort()
     const controller = new AbortController()
     abortRef.current = controller
@@ -38,12 +38,13 @@ export function useAskAnalystStream() {
     let answer = ''
     let model: string | null = null
     let tokensPerSecond: number | null = null
+    let resolvedConversationId: number | null = conversationId
 
     try {
       const response = await fetch(`${API_BASE_URL}/analyst/ask/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question, conversation_id: conversationId }),
         signal: controller.signal,
       })
       if (!response.ok || !response.body) {
@@ -65,7 +66,12 @@ export function useAskAnalystStream() {
         for (const event of events) {
           const line = event.trim()
           if (!line.startsWith('data: ')) continue
-          const chunk: StreamChunk = JSON.parse(line.slice('data: '.length))
+          const parsed = JSON.parse(line.slice('data: '.length))
+          if (typeof parsed.conversation_id === 'number') {
+            resolvedConversationId = parsed.conversation_id
+            continue
+          }
+          const chunk = parsed as StreamChunk
           answer += chunk.content
           model = chunk.model ?? model
           tokensPerSecond = chunk.tokens_per_second ?? tokensPerSecond
@@ -74,15 +80,17 @@ export function useAskAnalystStream() {
       }
 
       setState((prev) => ({ ...prev, isStreaming: false }))
-      return { answer, model, tokensPerSecond }
+      return { answer, model, tokensPerSecond, conversationId: resolvedConversationId }
     } catch (error) {
-      if (controller.signal.aborted) return { answer, model, tokensPerSecond }
+      if (controller.signal.aborted) {
+        return { answer, model, tokensPerSecond, conversationId: resolvedConversationId }
+      }
       setState((prev) => ({
         ...prev,
         isStreaming: false,
         error: error instanceof Error ? error.message : 'Erro desconhecido',
       }))
-      return { answer, model, tokensPerSecond }
+      return { answer, model, tokensPerSecond, conversationId: resolvedConversationId }
     }
   }, [])
 

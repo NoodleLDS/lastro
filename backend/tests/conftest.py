@@ -8,6 +8,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from lastro.db import get_session
 from lastro.main import app
+from lastro.services.auth.security import create_access_token
 from lastro.services.llm.dependency import get_ollama_provider
 from lastro.services.llm.provider import VisionExtractedItem
 
@@ -45,7 +46,12 @@ async def client(session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     app.dependency_overrides[get_session] = override_get_session
     app.dependency_overrides[get_ollama_provider] = lambda: NullCategorizationProvider()
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
+    token = create_access_token("admin")
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        headers={"Authorization": f"Bearer {token}"},
+    ) as client:
         yield client
 
     app.dependency_overrides.clear()

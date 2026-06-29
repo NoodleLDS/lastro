@@ -1,7 +1,12 @@
 from datetime import date as date_
-from typing import Protocol
+from typing import Protocol, TypedDict
 
 from pydantic import BaseModel
+
+
+class ChatMessage(TypedDict):
+    role: str
+    content: str
 
 
 class VisionExtractedItem(BaseModel):
@@ -16,4 +21,6 @@ class LLMProvider(Protocol):
 
     async def categorize(self, description: str, category_names: list[str]) -> str | None: ...
 
-    async def complete(self, system_prompt: str, user_message: str) -> str: ...
+    async def complete(
+        self, system_prompt: str, user_message: str, history: list[ChatMessage] | None = None
+    ) -> str: ...

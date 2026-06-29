@@ -1,3 +1,4 @@
+import base64
 import json
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
@@ -6,7 +7,7 @@ import httpx
 import structlog
 from fastapi import HTTPException
 
-from lastro.services.llm.provider import VisionExtractedItem
+from lastro.services.llm.provider import ChatMessage, VisionExtractedItem
 
 logger = structlog.get_logger()
 
@@ -32,16 +33,89 @@ _OLLAMA_UNAVAILABLE_DETAIL = (
     "modelo configurado disponível (`ollama pull <modelo>`)."
 )
 
+_VISION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "transactions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "description": {"type": "string"},
+                    "amount_cents": {"type": "integer"},
+                    "date": {"type": "string"},
+                    "suggested_category": {"type": "string"},
+                },
+                "required": ["description", "amount_cents"],
+            },
+        }
+    },
+    "required": ["transactions"],
+}
+
+_VISION_PROMPT = (
+    "Extraia todas as transações desta fatura de cartão de crédito. "
+    "Para cada transação, identifique descrição, valor em centavos (sempre "
+    "positivo, ex.: R$ 35,90 vira 3590), e a data se estiver visível no "
+    "formato YYYY-MM-DD. Responda apenas com o JSON pedido."
+)
+
 
 class OllamaProvider:
-    def __init__(self, base_url: str, model: str) -> None:
+    def __init__(self, base_url: str, model: str, vision_model: str | None = None) -> None:
         self._base_url = base_url.rstrip("/")
         self._model = model
+        self._vision_model = vision_model
 
     async def vision(self, image_bytes: bytes, mime_type: str) -> list[VisionExtractedItem]:
-        raise NotImplementedError(
-            "vision de fatura é opt-in via Claude API, não suportado no Ollama"
-        )
+        if not self._vision_model:
+            raise HTTPException(
+                status_code=400,
+                detail="modelo de visão do Ollama não configurado (LASTRO_OLLAMA_VISION_MODEL)",
+            )
+
+        image_b64 = base64.b64encode(image_bytes).decode("ascii")
+
+        try:
+            async with httpx.AsyncClient(timeout=120) as client:
+                response = await client.post(
+                    f"{self._base_url}/api/chat",
+                    json={
+                        "model": self._vision_model,
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": _VISION_PROMPT,
+                                "images": [image_b64],
+                            }
+                        ],
+                        "format": _VISION_SCHEMA,
+                        "stream": False,
+                    },
+                )
+                response.raise_for_status()
+                body = response.json()
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError) as exc:
+            logger.warning("ollama_vision_indisponivel", error=str(exc))
+            raise HTTPException(status_code=503, detail=_OLLAMA_UNAVAILABLE_DETAIL) from exc
+
+        content = body["message"]["content"]
+        try:
+            parsed = json.loads(content)
+        except (json.JSONDecodeError, TypeError) as exc:
+            logger.warning("ollama_vision_resposta_invalida", content=content)
+            raise HTTPException(
+                status_code=502, detail="modelo de visão retornou resposta inválida"
+            ) from exc
+
+        items = []
+        for item in parsed.get("transactions", []):
+            if not item.get("date"):
+                item.pop("date", None)
+            if not item.get("suggested_category"):
+                item.pop("suggested_category", None)
+            items.append(VisionExtractedItem(**item))
+        return items
 
     async def categorize(self, description: str, category_names: list[str]) -> str | None:
         if not category_names:
@@ -77,19 +151,19 @@ class OllamaProvider:
             return None
         return category
 
-    async def complete(self, system_prompt: str, user_message: str) -> str:
+    async def complete(
+        self, system_prompt: str, user_message: str, history: list[ChatMessage] | None = None
+    ) -> str:
+        messages = [
+            {"role": "system", "content": system_prompt},
+            *(history or []),
+            {"role": "user", "content": user_message},
+        ]
         try:
             async with httpx.AsyncClient(timeout=150) as client:
                 response = await client.post(
                     f"{self._base_url}/api/chat",
-                    json={
-                        "model": self._model,
-                        "messages": [
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_message},
-                        ],
-                        "stream": False,
-                    },
+                    json={"model": self._model, "messages": messages, "stream": False},
                 )
                 response.raise_for_status()
                 body = response.json()
@@ -100,21 +174,22 @@ class OllamaProvider:
         return body["message"]["content"]
 
     async def complete_stream(
-        self, system_prompt: str, user_message: str
+        self,
+        system_prompt: str,
+        user_message: str,
+        history: list[ChatMessage] | None = None,
     ) -> AsyncIterator[StreamChunk]:
+        messages = [
+            {"role": "system", "content": system_prompt},
+            *(history or []),
+            {"role": "user", "content": user_message},
+        ]
         try:
             async with httpx.AsyncClient(timeout=150) as client:
                 async with client.stream(
                     "POST",
                     f"{self._base_url}/api/chat",
-                    json={
-                        "model": self._model,
-                        "messages": [
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_message},
-                        ],
-                        "stream": True,
-                    },
+                    json={"model": self._model, "messages": messages, "stream": True},
                 ) as response:
                     response.raise_for_status()
                     async for line in response.aiter_lines():

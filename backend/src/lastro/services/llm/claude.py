@@ -2,7 +2,7 @@ import base64
 
 import httpx
 
-from lastro.services.llm.provider import VisionExtractedItem
+from lastro.services.llm.provider import ChatMessage, VisionExtractedItem
 
 _ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 _ANTHROPIC_VERSION = "2023-06-01"
@@ -94,5 +94,7 @@ class ClaudeVisionProvider:
     async def categorize(self, description: str, category_names: list[str]) -> str | None:
         raise NotImplementedError("categorização de texto usa o provider Ollama, não Claude")
 
-    async def complete(self, system_prompt: str, user_message: str) -> str:
+    async def complete(
+        self, system_prompt: str, user_message: str, history: list[ChatMessage] | None = None
+    ) -> str:
         raise NotImplementedError("chat do analista usa o provider Ollama, não Claude")

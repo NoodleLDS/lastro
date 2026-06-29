@@ -4,11 +4,20 @@ import { apiPost } from '@/lib/api'
 
 const askAnalystResponseSchema = z.object({
   answer: z.string(),
+  conversation_id: z.number(),
 })
 
 export function useAskAnalyst() {
   return useMutation({
-    mutationFn: async (question: string) =>
-      askAnalystResponseSchema.parse(await apiPost('/analyst/ask', { question })),
+    mutationFn: async ({
+      question,
+      conversationId,
+    }: {
+      question: string
+      conversationId: number | null
+    }) =>
+      askAnalystResponseSchema.parse(
+        await apiPost('/analyst/ask', { question, conversation_id: conversationId }),
+      ),
   })
 }

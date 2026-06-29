@@ -7,15 +7,19 @@ from lastro.services.llm.provider import LLMProvider
 
 
 def get_llm_provider() -> LLMProvider:
-    if not settings.anthropic_api_key:
-        raise HTTPException(
-            status_code=400,
-            detail="recurso opt-in, configure LASTRO_ANTHROPIC_API_KEY",
-        )
-    return ClaudeVisionProvider(settings.anthropic_api_key)
+    """Provider de visão de fatura. Default: Ollama local (sem custo). Opt-in:
+    Claude API, ativado via LASTRO_LLM_PROVIDER=claude + LASTRO_ANTHROPIC_API_KEY."""
+    if settings.llm_provider == "claude":
+        if not settings.anthropic_api_key:
+            raise HTTPException(
+                status_code=400,
+                detail="LASTRO_LLM_PROVIDER=claude requer LASTRO_ANTHROPIC_API_KEY",
+            )
+        return ClaudeVisionProvider(settings.anthropic_api_key)
+    return get_ollama_provider()
 
 
 def get_ollama_provider() -> LLMProvider:
     """Provider default (Ollama local) — usado tanto para categorização de
     transações quanto para o chat do analista. Camada de IA é uma só."""
-    return OllamaProvider(settings.ollama_url, settings.ollama_model)
+    return OllamaProvider(settings.ollama_url, settings.ollama_model, settings.ollama_vision_model)

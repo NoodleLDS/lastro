@@ -1,3 +1,4 @@
+import base64
 import json
 from unittest.mock import AsyncMock, patch
 
@@ -48,11 +49,96 @@ async def test_categorize_sem_categorias_disponiveis_nao_chama_o_modelo() -> Non
     assert result is None
 
 
-async def test_vision_nao_e_suportado_no_ollama() -> None:
+async def test_vision_sem_modelo_configurado_retorna_400() -> None:
     provider = OllamaProvider("http://ollama.local", "llama3.2:3b")
 
-    with pytest.raises(NotImplementedError):
-        await provider.vision(b"", "image/png")
+    with pytest.raises(HTTPException) as exc_info:
+        await provider.vision(b"fake-image-bytes", "image/png")
+
+    assert exc_info.value.status_code == 400
+
+
+async def test_vision_extrai_transacoes_da_resposta_do_modelo() -> None:
+    provider = OllamaProvider("http://ollama.local", "llama3.2:3b", "qwen2.5vl:3b")
+
+    response = _chat_response(
+        {
+            "transactions": [
+                {"description": "Zebu", "amount_cents": 2200, "date": "2026-06-01"},
+                {"description": "Posto", "amount_cents": 3500},
+            ]
+        }
+    )
+
+    with patch.object(httpx.AsyncClient, "post", new=AsyncMock()) as mock_post:
+        mock_post.return_value = response
+
+        result = await provider.vision(b"fake-image-bytes", "image/png")
+
+    assert len(result) == 2
+    assert result[0].description == "Zebu"
+    assert result[0].amount_cents == 2200
+    call_kwargs = mock_post.call_args.kwargs
+    assert call_kwargs["json"]["model"] == "qwen2.5vl:3b"
+    assert call_kwargs["json"]["messages"][0]["images"] == [
+        base64.b64encode(b"fake-image-bytes").decode("ascii")
+    ]
+
+
+async def test_vision_ignora_date_e_categoria_vazias_do_modelo() -> None:
+    provider = OllamaProvider("http://ollama.local", "llama3.2:3b", "qwen2.5vl:3b")
+
+    response = _chat_response(
+        {
+            "transactions": [
+                {
+                    "description": "Steamgames.Com",
+                    "amount_cents": 3098,
+                    "date": "",
+                    "suggested_category": "",
+                }
+            ]
+        }
+    )
+
+    with patch.object(httpx.AsyncClient, "post", new=AsyncMock()) as mock_post:
+        mock_post.return_value = response
+
+        result = await provider.vision(b"fake-image-bytes", "image/png")
+
+    assert len(result) == 1
+    assert result[0].date is None
+    assert result[0].suggested_category is None
+
+
+async def test_vision_levanta_503_quando_ollama_esta_fora_do_ar() -> None:
+    provider = OllamaProvider("http://ollama.local", "llama3.2:3b", "qwen2.5vl:3b")
+
+    with patch.object(httpx.AsyncClient, "post", new=AsyncMock()) as mock_post:
+        mock_post.side_effect = httpx.ConnectError("connection refused")
+
+        with pytest.raises(HTTPException) as exc_info:
+            await provider.vision(b"fake-image-bytes", "image/png")
+
+    assert exc_info.value.status_code == 503
+
+
+async def test_vision_resposta_invalida_levanta_502() -> None:
+    provider = OllamaProvider("http://ollama.local", "llama3.2:3b", "qwen2.5vl:3b")
+
+    response = httpx.Response(
+        200,
+        json={"message": {"content": "isso não é JSON válido"}},
+        request=httpx.Request("POST", "http://ollama.local/api/chat"),
+    )
+
+    with patch.object(httpx.AsyncClient, "post", new=AsyncMock()) as mock_post:
+        mock_post.return_value = response
+
+        with pytest.raises(HTTPException) as exc_info:
+            await provider.vision(b"fake-image-bytes", "image/png")
+
+    assert exc_info.value.status_code == 502
 
 
 async def test_categorize_retorna_none_quando_ollama_esta_fora_do_ar() -> None:
