@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, patch
 import httpx
 import pytest
 from fastapi import HTTPException
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from lastro.services.llm.ollama import OllamaProvider
 
@@ -259,3 +260,64 @@ async def test_complete_retorna_texto_livre_da_resposta() -> None:
         {"role": "user", "content": "pergunta do usuário"},
     ]
     assert "format" not in call_kwargs["json"]
+
+
+async def test_complete_sem_session_nao_envia_tools() -> None:
+    provider = OllamaProvider("http://ollama.local", "llama3.2:3b")
+
+    response = httpx.Response(
+        200,
+        json={"message": {"content": "ok"}},
+        request=httpx.Request("POST", "http://ollama.local/api/chat"),
+    )
+
+    with patch.object(httpx.AsyncClient, "post", new=AsyncMock(return_value=response)) as mock_post:
+        await provider.complete("system prompt", "pergunta do usuário")
+
+    assert "tools" not in mock_post.call_args.kwargs["json"]
+
+
+async def test_complete_executa_tool_call_e_devolve_resultado_ao_modelo(
+    session: AsyncSession,
+) -> None:
+    provider = OllamaProvider("http://ollama.local", "llama3.2:3b")
+
+    tool_call_response = httpx.Response(
+        200,
+        json={
+            "message": {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                    {
+                        "function": {
+                            "name": "get_emergency_reserve",
+                            "arguments": {},
+                        }
+                    }
+                ],
+            }
+        },
+        request=httpx.Request("POST", "http://ollama.local/api/chat"),
+    )
+    final_response = httpx.Response(
+        200,
+        json={"message": {"role": "assistant", "content": "Sua reserva está saudável."}},
+        request=httpx.Request("POST", "http://ollama.local/api/chat"),
+    )
+
+    with patch.object(
+        httpx.AsyncClient, "post", new=AsyncMock(side_effect=[tool_call_response, final_response])
+    ) as mock_post:
+        result = await provider.complete(
+            "system prompt", "como está minha reserva?", session=session
+        )
+
+    assert result == "Sua reserva está saudável."
+    assert mock_post.call_count == 2
+    first_call_json = mock_post.call_args_list[0].kwargs["json"]
+    assert first_call_json["tools"][0]["function"]["name"] == "get_portfolio"
+    second_call_messages = mock_post.call_args_list[1].kwargs["json"]["messages"]
+    tool_messages = [m for m in second_call_messages if m["role"] == "tool"]
+    assert len(tool_messages) == 1
+    assert "Nenhuma reserva" in tool_messages[0]["content"]

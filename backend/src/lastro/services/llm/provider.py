@@ -1,7 +1,10 @@
 from datetime import date as date_
-from typing import Protocol, TypedDict
+from typing import TYPE_CHECKING, Protocol, TypedDict
 
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from sqlmodel.ext.asyncio.session import AsyncSession
 
 
 class ChatMessage(TypedDict):
@@ -22,5 +25,9 @@ class LLMProvider(Protocol):
     async def categorize(self, description: str, category_names: list[str]) -> str | None: ...
 
     async def complete(
-        self, system_prompt: str, user_message: str, history: list[ChatMessage] | None = None
+        self,
+        system_prompt: str,
+        user_message: str,
+        history: list[ChatMessage] | None = None,
+        session: "AsyncSession | None" = None,
     ) -> str: ...

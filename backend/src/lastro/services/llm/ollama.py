@@ -2,14 +2,21 @@ import base64
 import json
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import httpx
 import structlog
 from fastapi import HTTPException
 
 from lastro.services.llm.provider import ChatMessage, VisionExtractedItem
+from lastro.services.llm.tools import TOOL_DEFINITIONS, execute_tool
+
+if TYPE_CHECKING:
+    from sqlmodel.ext.asyncio.session import AsyncSession
 
 logger = structlog.get_logger()
+
+_MAX_TOOL_CALL_ROUNDS = 5
 
 
 @dataclass
@@ -152,38 +159,112 @@ class OllamaProvider:
         return category
 
     async def complete(
-        self, system_prompt: str, user_message: str, history: list[ChatMessage] | None = None
+        self,
+        system_prompt: str,
+        user_message: str,
+        history: list[ChatMessage] | None = None,
+        session: "AsyncSession | None" = None,
     ) -> str:
-        messages = [
+        messages: list[dict] = [
             {"role": "system", "content": system_prompt},
             *(history or []),
             {"role": "user", "content": user_message},
         ]
-        try:
-            async with httpx.AsyncClient(timeout=150) as client:
-                response = await client.post(
-                    f"{self._base_url}/api/chat",
-                    json={"model": self._model, "messages": messages, "stream": False},
-                )
-                response.raise_for_status()
-                body = response.json()
-        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError) as exc:
-            logger.warning("ollama_complete_indisponivel", error=str(exc))
-            raise HTTPException(status_code=503, detail=_OLLAMA_UNAVAILABLE_DETAIL) from exc
+        tools = TOOL_DEFINITIONS if session is not None else None
 
-        return body["message"]["content"]
+        for _ in range(_MAX_TOOL_CALL_ROUNDS):
+            try:
+                async with httpx.AsyncClient(timeout=150) as client:
+                    payload = {"model": self._model, "messages": messages, "stream": False}
+                    if tools:
+                        payload["tools"] = tools
+                    response = await client.post(f"{self._base_url}/api/chat", json=payload)
+                    response.raise_for_status()
+                    body = response.json()
+            except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError) as exc:
+                logger.warning("ollama_complete_indisponivel", error=str(exc))
+                raise HTTPException(status_code=503, detail=_OLLAMA_UNAVAILABLE_DETAIL) from exc
+
+            message = body["message"]
+            tool_calls = message.get("tool_calls")
+            if not tool_calls or session is None:
+                return message["content"]
+
+            messages.append(message)
+            for call in tool_calls:
+                function = call["function"]
+                arguments = function.get("arguments") or {}
+                result = await execute_tool(session, function["name"], arguments)
+                messages.append({"role": "tool", "content": result})
+
+        return (
+            "Não consegui concluir a consulta às ferramentas a tempo. Tente reformular a pergunta."
+        )
 
     async def complete_stream(
         self,
         system_prompt: str,
         user_message: str,
         history: list[ChatMessage] | None = None,
+        session: "AsyncSession | None" = None,
     ) -> AsyncIterator[StreamChunk]:
-        messages = [
+        messages: list[dict] = [
             {"role": "system", "content": system_prompt},
             *(history or []),
             {"role": "user", "content": user_message},
         ]
+        tools = TOOL_DEFINITIONS if session is not None else None
+
+        for _ in range(_MAX_TOOL_CALL_ROUNDS):
+            tool_calls = await self._resolve_tool_calls(messages, tools, session)
+            if not tool_calls:
+                break
+            for call in tool_calls:
+                function = call["function"]
+                arguments = function.get("arguments") or {}
+                result = await execute_tool(session, function["name"], arguments)
+                messages.append({"role": "tool", "content": result})
+
+        async for chunk in self._stream_final_answer(messages):
+            yield chunk
+
+    async def _resolve_tool_calls(
+        self,
+        messages: list[dict],
+        tools: list[dict] | None,
+        session: "AsyncSession | None",
+    ) -> list[dict]:
+        """Chamada não-streaming só para checar se a LLM quer usar uma tool.
+        Se não quiser, não modifica `messages` (a resposta final é streamada
+        de fato em `_stream_final_answer`); se quiser, anexa a mensagem do
+        assistant com `tool_calls` e devolve a lista para execução."""
+        if not tools or session is None:
+            return []
+        try:
+            async with httpx.AsyncClient(timeout=150) as client:
+                response = await client.post(
+                    f"{self._base_url}/api/chat",
+                    json={
+                        "model": self._model,
+                        "messages": messages,
+                        "tools": tools,
+                        "stream": False,
+                    },
+                )
+                response.raise_for_status()
+                body = response.json()
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError) as exc:
+            logger.warning("ollama_complete_stream_indisponivel", error=str(exc))
+            raise HTTPException(status_code=503, detail=_OLLAMA_UNAVAILABLE_DETAIL) from exc
+
+        message = body["message"]
+        tool_calls = message.get("tool_calls")
+        if not tool_calls:
+            return []
+        messages.append(message)
+        return tool_calls
+
+    async def _stream_final_answer(self, messages: list[dict]) -> AsyncIterator[StreamChunk]:
         try:
             async with httpx.AsyncClient(timeout=150) as client:
                 async with client.stream(

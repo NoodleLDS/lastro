@@ -27,10 +27,9 @@ router = APIRouter(prefix="/analyst", tags=["analyst"])
 
 
 async def _build_system_prompt(session: AsyncSession) -> str:
-    portfolio_context = await build_portfolio_context(session)
     instructions = await session.exec(select(AnalystInstructions))
     custom_instructions = instructions.first()
-    prompt = f"{MASTER_PROMPT}\n\n# Dados vivos do banco (use estes números)\n\n{portfolio_context}"
+    prompt = MASTER_PROMPT
     if custom_instructions and custom_instructions.content.strip():
         prompt += f"\n\n# Instruções adicionais do usuário\n\n{custom_instructions.content}"
     return prompt
@@ -101,7 +100,7 @@ async def ask_analyst(
     system_prompt = await _build_system_prompt(session)
 
     await _save_message(session, conversation_id, MessageRole.USER, payload.question)
-    answer = await llm.complete(system_prompt, payload.question, history)
+    answer = await llm.complete(system_prompt, payload.question, history, session)
     await _save_message(session, conversation_id, MessageRole.ASSISTANT, answer)
 
     return AskAnalystResponse(answer=answer, conversation_id=conversation_id)
@@ -130,7 +129,7 @@ async def ask_analyst_stream(
         last_model: str | None = None
         last_tps: float | None = None
         yield f"data: {json.dumps({'conversation_id': conversation_id})}\n\n"
-        async for chunk in llm.complete_stream(system_prompt, payload.question, history):
+        async for chunk in llm.complete_stream(system_prompt, payload.question, history, session):
             full_answer += chunk.content
             last_model = chunk.model or last_model
             last_tps = chunk.tokens_per_second or last_tps

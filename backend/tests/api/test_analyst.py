@@ -21,7 +21,11 @@ class _StubLLM:
         return None
 
     async def complete(
-        self, system_prompt: str, user_message: str, history: list[ChatMessage] | None = None
+        self,
+        system_prompt: str,
+        user_message: str,
+        history: list[ChatMessage] | None = None,
+        session=None,
     ) -> str:
         self.last_system_prompt = system_prompt
         self.last_user_message = user_message
@@ -43,7 +47,7 @@ async def test_ask_analyst_retorna_resposta_do_llm(client: AsyncClient) -> None:
     assert isinstance(body["conversation_id"], int)
     assert stub.last_user_message == "Devo vender BBAS3?"
     assert "ANALISTA FINANCEIRO" in stub.last_system_prompt
-    assert "Carteira atual" in stub.last_system_prompt
+    assert "get_portfolio" in stub.last_system_prompt
 
 
 async def test_ask_analyst_rejeita_pergunta_vazia(client: AsyncClient) -> None:
@@ -140,7 +144,11 @@ class _OfflineLLM:
         return None
 
     async def complete(
-        self, system_prompt: str, user_message: str, history: list[ChatMessage] | None = None
+        self,
+        system_prompt: str,
+        user_message: str,
+        history: list[ChatMessage] | None = None,
+        session=None,
     ) -> str:
         raise HTTPException(status_code=503, detail="Serviço de IA (Ollama) indisponível.")
 
