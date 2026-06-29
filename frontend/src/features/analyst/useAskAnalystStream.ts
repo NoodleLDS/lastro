@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
+import { getToken } from '@/lib/api'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -41,9 +42,13 @@ export function useAskAnalystStream() {
     let resolvedConversationId: number | null = conversationId
 
     try {
+      const token = getToken()
       const response = await fetch(`${API_BASE_URL}/analyst/ask/stream`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ question, conversation_id: conversationId }),
         signal: controller.signal,
       })
