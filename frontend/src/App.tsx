@@ -12,7 +12,7 @@ import { AdminMenu } from '@/features/admin/AdminMenu'
 import { AnalystChat } from '@/features/analyst/AnalystChat'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { CardGrid } from '@/features/cards/CardGrid'
-import { CardMonthSpending } from '@/features/cards/CardMonthSpending'
+import { CardWorkspace } from '@/features/cards/CardWorkspace'
 import { useCards } from '@/features/cards/useCards'
 import { ContributionForm } from '@/features/contributions/ContributionForm'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
@@ -21,11 +21,8 @@ import { MonthlySummaryPage } from '@/features/monthly-summary/MonthlySummaryPag
 import { PositionDetailPage } from '@/features/positions/PositionDetailPage'
 import { PositionsTable } from '@/features/positions/PositionsTable'
 import type { Position } from '@/features/positions/usePositions'
-import { QuickEntryInput } from '@/features/quick-entry/QuickEntryInput'
 import { ReportsPage } from '@/features/reports/ReportsPage'
 import { TransactionsPage } from '@/features/transactions/TransactionsPage'
-import { VisionPreviewTable } from '@/features/vision-preview/VisionPreviewTable'
-import { VisionUpload } from '@/features/vision-preview/VisionUpload'
 import { useAuth } from '@/lib/auth-context'
 import { useTheme } from '@/lib/theme-context'
 import { THEME_LABELS, type ThemeName } from '@/lib/themes'
@@ -99,14 +96,7 @@ function App() {
 
         <TabsContent value="cards" className="flex flex-col gap-6">
           <CardGrid selectedCardId={selectedCardId} onSelectCard={setSelectedCardId} />
-          {selectedCard && (
-            <>
-              <QuickEntryInput cardId={selectedCard.id} cardName={selectedCard.name} />
-              <VisionUpload cardId={selectedCard.id} />
-              <VisionPreviewTable cardId={selectedCard.id} />
-              <CardMonthSpending cardId={selectedCard.id} />
-            </>
-          )}
+          {selectedCard && <CardWorkspace cardId={selectedCard.id} cardName={selectedCard.name} />}
         </TabsContent>
 
         <TabsContent value="transactions">
@@ -143,7 +133,7 @@ function App() {
           <DashboardPage />
         </TabsContent>
 
-        <TabsContent value="analyst" className="flex justify-center">
+        <TabsContent value="analyst">
           <AnalystChat />
         </TabsContent>
       </Tabs>

@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
+import { assetTypeLabel } from '@/lib/asset-type-labels'
 import { formatCents } from '@/lib/format'
 import { useAllocation } from './useAllocation'
 
@@ -38,9 +39,9 @@ export function AllocationChart() {
   }
 
   const chartData = allocation.map((item) => ({
-    name: item.asset_type,
+    name: assetTypeLabel(item.asset_type),
     value: item.current_value_cents,
-    label: `${item.asset_type} ${item.current_percentage.toFixed(1)}%`,
+    percentage: item.current_percentage,
   }))
 
   return (
@@ -54,15 +55,28 @@ export function AllocationChart() {
             <Pie
               data={chartData}
               dataKey="value"
-              nameKey="label"
-              outerRadius={80}
-              label={({ name }) => name}
+              nameKey="name"
+              innerRadius={55}
+              outerRadius={85}
+              paddingAngle={2}
+              stroke="none"
             >
               {chartData.map((entry, index) => (
                 <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
-            <Tooltip formatter={(value) => formatCents(Number(value))} />
+            <Tooltip
+              formatter={(value, _name, item) => [
+                `${formatCents(Number(value))} (${item.payload.percentage.toFixed(1)}%)`,
+                item.payload.name,
+              ]}
+              contentStyle={{
+                background: 'var(--popover)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)',
+                color: 'var(--popover-foreground)',
+              }}
+            />
           </PieChart>
         </ResponsiveContainer>
 
@@ -75,19 +89,18 @@ export function AllocationChart() {
                     className="size-2 rounded-full"
                     style={{ background: COLORS[index % COLORS.length] }}
                   />
-                  {item.asset_type}
+                  {assetTypeLabel(item.asset_type)}
                 </span>
-                <span>
-                  {item.current_percentage.toFixed(1)}%
-                  {item.target_percentage !== null && ` (meta: ${item.target_percentage}%)`}
-                  {item.is_deviation_alert && (
-                    <Badge variant="destructive" className="ml-2">
-                      desvio
-                    </Badge>
-                  )}
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <span className="text-foreground">{item.current_percentage.toFixed(1)}%</span>
+                  {item.target_percentage !== null && `meta: ${item.target_percentage}%`}
+                  {item.is_deviation_alert && <Badge variant="destructive">desvio</Badge>}
                 </span>
               </div>
-              <Progress value={item.current_percentage} />
+              <Progress
+                value={item.current_percentage}
+                indicatorColor={COLORS[index % COLORS.length]}
+              />
             </div>
           ))}
         </div>

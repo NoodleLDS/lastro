@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -7,12 +7,31 @@ import { useQuickEntry } from './useQuickEntry'
 interface QuickEntryInputProps {
   cardId: number
   cardName: string
+  referenceYear: number
+  referenceMonth: number
 }
 
-export function QuickEntryInput({ cardId, cardName }: QuickEntryInputProps) {
+function defaultDateForReference(year: number, month: number): string {
+  const today = new Date()
+  if (year === today.getFullYear() && month === today.getMonth() + 1) {
+    return today.toISOString().slice(0, 10)
+  }
+  return new Date(year, month - 1, 1).toISOString().slice(0, 10)
+}
+
+export function QuickEntryInput({
+  cardId,
+  cardName,
+  referenceYear,
+  referenceMonth,
+}: QuickEntryInputProps) {
   const [raw, setRaw] = useState('')
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [date, setDate] = useState(() => defaultDateForReference(referenceYear, referenceMonth))
   const quickEntry = useQuickEntry()
+
+  useEffect(() => {
+    setDate(defaultDateForReference(referenceYear, referenceMonth))
+  }, [referenceYear, referenceMonth])
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()

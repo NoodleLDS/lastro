@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { MoneyValue } from '@/components/money-value'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -39,18 +39,20 @@ function calendarMonthRange(year: number, month: number): { dateFrom: string; da
   }
 }
 
-export function CardMonthSpending({ cardId }: { cardId: number }) {
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
-  const [{ year, month }, setReference] = useState(() => {
-    const now = new Date()
-    return { year: now.getFullYear(), month: now.getMonth() + 1 }
-  })
+interface CardMonthSpendingProps {
+  cardId: number
+  year: number
+  month: number
+  onReferenceChange: (reference: { year: number; month: number }) => void
+}
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: cardId dispara o reset de mês ao trocar de cartão, mesmo sem ser lido no corpo
-  useEffect(() => {
-    const now = new Date()
-    setReference({ year: now.getFullYear(), month: now.getMonth() + 1 })
-  }, [cardId])
+export function CardMonthSpending({
+  cardId,
+  year,
+  month,
+  onReferenceChange,
+}: CardMonthSpendingProps) {
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
 
   const { dateFrom, dateTo } = useMemo(() => calendarMonthRange(year, month), [year, month])
   const { data: transactions, isLoading } = useTransactions({ cardId, dateFrom, dateTo })
@@ -79,7 +81,7 @@ export function CardMonthSpending({ cardId }: { cardId: number }) {
             variant="ghost"
             className="size-7"
             aria-label="Mês anterior"
-            onClick={() => setReference(addMonths(year, month, -1))}
+            onClick={() => onReferenceChange(addMonths(year, month, -1))}
           >
             <ChevronLeft className="size-4" />
           </Button>
@@ -92,7 +94,7 @@ export function CardMonthSpending({ cardId }: { cardId: number }) {
             variant="ghost"
             className="size-7"
             aria-label="Próximo mês"
-            onClick={() => setReference(addMonths(year, month, 1))}
+            onClick={() => onReferenceChange(addMonths(year, month, 1))}
           >
             <ChevronRight className="size-4" />
           </Button>
