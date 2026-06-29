@@ -10,10 +10,14 @@ export function LoginPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    const success = login(username, password)
+    setIsSubmitting(true)
+    setError(null)
+    const success = await login(username, password)
+    setIsSubmitting(false)
     if (!success) {
       setError('Usuário ou senha incorretos.')
     }
@@ -52,8 +56,8 @@ export function LoginPage() {
               />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="mt-2">
-              Entrar
+            <Button type="submit" className="mt-2" disabled={isSubmitting}>
+              {isSubmitting ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
         </CardContent>

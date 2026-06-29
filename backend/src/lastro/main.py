@@ -1,11 +1,14 @@
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
+from lastro.api.admin import router as admin_router
 from lastro.api.allocation_targets import router as allocation_targets_router
 from lastro.api.analyst import router as analyst_router
+from lastro.api.auth import router as auth_router
 from lastro.api.cards import router as cards_router
 from lastro.api.categories import router as categories_router
 from lastro.api.contributions import router as contributions_router
@@ -24,17 +27,39 @@ from lastro.api.transactions import router as transactions_router
 from lastro.core.logging import configure_logging
 from lastro.db import get_session
 from lastro.services.analytics.snapshot import record_monthly_snapshot
+from lastro.services.auth.bootstrap import ensure_admin_user
+from lastro.services.auth.security import decode_access_token
+
+PUBLIC_PATHS = {"/health", "/auth/login", "/docs", "/openapi.json"}
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     configure_logging()
     async for session in get_session():
+        await ensure_admin_user(session)
         await record_monthly_snapshot(session)
     yield
 
 
 app = FastAPI(title="Lastro", lifespan=lifespan)
+
+
+@app.middleware("http")
+async def require_auth(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
+    if request.method == "OPTIONS" or request.url.path in PUBLIC_PATHS:
+        return await call_next(request)
+
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header.removeprefix("Bearer ").strip()
+    username = decode_access_token(token) if token else None
+    if username is None:
+        return JSONResponse(status_code=401, content={"detail": "não autenticado"})
+
+    return await call_next(request)
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -43,7 +68,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 app.include_router(health_router)
+app.include_router(auth_router)
+app.include_router(admin_router)
 app.include_router(cards_router)
 app.include_router(categories_router)
 app.include_router(merchant_rules_router)

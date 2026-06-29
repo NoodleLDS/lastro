@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { AdminMenu } from '@/features/admin/AdminMenu'
 import { AnalystChat } from '@/features/analyst/AnalystChat'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { CardGrid } from '@/features/cards/CardGrid'
@@ -77,6 +78,7 @@ function App() {
               ))}
             </SelectContent>
           </Select>
+          <AdminMenu />
           <Button variant="outline" onClick={logout}>
             Sair
           </Button>

@@ -1,35 +1,35 @@
 import { createContext, type ReactNode, useContext, useState } from 'react'
+import { apiPost, clearToken, getToken, setToken } from '@/lib/api'
 
-const STORAGE_KEY = 'lastro-auth'
-const ADMIN_USERNAME = 'admin'
-const ADMIN_PASSWORD = 'admin'
+interface LoginResponse {
+  access_token: string
+  token_type: string
+}
 
 interface AuthContextValue {
   isAuthenticated: boolean
-  login: (username: string, password: string) => boolean
+  login: (username: string, password: string) => Promise<boolean>
   logout: () => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-function readStoredAuth(): boolean {
-  return localStorage.getItem(STORAGE_KEY) === 'true'
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(readStoredAuth)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => getToken() !== null)
 
-  function login(username: string, password: string): boolean {
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-      localStorage.setItem(STORAGE_KEY, 'true')
+  async function login(username: string, password: string): Promise<boolean> {
+    try {
+      const response = await apiPost<LoginResponse>('/auth/login', { username, password })
+      setToken(response.access_token)
       setIsAuthenticated(true)
       return true
+    } catch {
+      return false
     }
-    return false
   }
 
   function logout(): void {
-    localStorage.removeItem(STORAGE_KEY)
+    clearToken()
     setIsAuthenticated(false)
   }
 
