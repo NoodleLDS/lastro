@@ -221,6 +221,8 @@ async def delete_transaction(
 @router.post("/vision-preview", response_model=list[TransactionRead], status_code=201)
 async def create_vision_preview(
     card_id: int,
+    reference_year: int | None = None,
+    reference_month: int | None = None,
     file: UploadFile = File(...),
     session: AsyncSession = Depends(get_session),
     llm: LLMProvider = Depends(get_llm_provider),
@@ -232,6 +234,12 @@ async def create_vision_preview(
     mime_type = file.content_type or "image/png"
 
     items = await llm.vision(image_bytes, mime_type)
+
+    fallback_date = (
+        date_(reference_year, reference_month, 1)
+        if reference_year is not None and reference_month is not None
+        else date_.today()
+    )
 
     created: list[Transaction] = []
     for item in items:
@@ -255,7 +263,7 @@ async def create_vision_preview(
                     category_id, categorized_by = None, CategorizedBy.NONE
 
         transaction = Transaction(
-            date=item.date or date_.today(),
+            date=item.date or fallback_date,
             description=item.description,
             amount_cents=item.amount_cents,
             card_id=card_id,

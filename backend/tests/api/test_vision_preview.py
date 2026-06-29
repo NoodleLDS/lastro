@@ -52,6 +52,21 @@ async def test_vision_preview_cria_transacoes_pending_review(client: AsyncClient
     assert all(t["source"] == "vision_preview" for t in body)
 
 
+async def test_vision_preview_usa_mes_de_referencia_quando_item_sem_data(
+    client: AsyncClient,
+) -> None:
+    card = await _create_card(client)
+    _override_llm([VisionExtractedItem(description="uber viagem", amount_cents=2200)])
+
+    response = await client.post(
+        "/transactions/vision-preview",
+        params={"card_id": card["id"], "reference_year": 2026, "reference_month": 7},
+        files={"file": ("fatura.png", b"fake-image-bytes", "image/png")},
+    )
+    assert response.status_code == 201
+    assert response.json()[0]["date"] == "2026-07-01"
+
+
 async def test_vision_preview_nao_aparece_na_listagem_default(client: AsyncClient) -> None:
     card = await _create_card(client)
     _override_llm([VisionExtractedItem(description="uber viagem", amount_cents=2200)])

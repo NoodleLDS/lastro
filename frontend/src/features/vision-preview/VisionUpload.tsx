@@ -4,16 +4,18 @@ import { useUploadVisionPreview } from './useVisionPreview'
 
 interface VisionUploadProps {
   cardId: number
+  referenceYear: number
+  referenceMonth: number
 }
 
-export function VisionUpload({ cardId }: VisionUploadProps) {
+export function VisionUpload({ cardId, referenceYear, referenceMonth }: VisionUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const upload = useUploadVisionPreview()
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     if (!file) return
-    upload.mutate({ cardId, file })
+    upload.mutate({ cardId, file, referenceYear, referenceMonth })
     event.target.value = ''
   }
 

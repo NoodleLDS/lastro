@@ -34,11 +34,26 @@ export function usePendingReview(cardId: number | null) {
 export function useUploadVisionPreview() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ cardId, file }: { cardId: number; file: File }) => {
+    mutationFn: async ({
+      cardId,
+      file,
+      referenceYear,
+      referenceMonth,
+    }: {
+      cardId: number
+      file: File
+      referenceYear: number
+      referenceMonth: number
+    }) => {
       const formData = new FormData()
       formData.append('file', file)
+      const params = new URLSearchParams({
+        card_id: String(cardId),
+        reference_year: String(referenceYear),
+        reference_month: String(referenceMonth),
+      })
       return transactionsSchema.parse(
-        await apiUpload(`/transactions/vision-preview?card_id=${cardId}`, formData),
+        await apiUpload(`/transactions/vision-preview?${params}`, formData),
       )
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['transactions'] }),

@@ -24,7 +24,7 @@ export function CardWorkspace({ cardId, cardName }: { cardId: number; cardName: 
         referenceYear={year}
         referenceMonth={month}
       />
-      <VisionUpload cardId={cardId} />
+      <VisionUpload cardId={cardId} referenceYear={year} referenceMonth={month} />
       <VisionPreviewTable cardId={cardId} />
       <CardMonthSpending
         cardId={cardId}
