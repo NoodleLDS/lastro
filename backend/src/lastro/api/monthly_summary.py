@@ -1,14 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import func, select
+from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from lastro.core.fk import ensure_fk_exists
 from lastro.db import get_session
-from lastro.models.card import Card
 from lastro.models.category import Category
 from lastro.models.fixed_expense import FixedExpense
 from lastro.models.income import Income
-from lastro.models.transaction import Transaction
 from lastro.models.variable_expense import VariableExpense
 from lastro.schemas.monthly_summary import (
     FixedExpenseCreate,
@@ -21,7 +19,7 @@ from lastro.schemas.monthly_summary import (
     VariableExpenseRead,
     VariableExpenseUpdate,
 )
-from lastro.services.analytics.monthly_summary import MonthlySummary, calculate_monthly_summary
+from lastro.services.analytics.monthly_summary import MonthlySummary, fetch_monthly_summary
 
 router = APIRouter(tags=["monthly-summary"])
 
@@ -206,35 +204,4 @@ async def get_monthly_summary(
     month: int,
     session: AsyncSession = Depends(get_session),
 ) -> MonthlySummary:
-    incomes_result = await session.exec(
-        select(Income).where(Income.year == year, Income.month == month)
-    )
-    fixed_expenses_result = await session.exec(
-        select(FixedExpense).where(FixedExpense.year == year, FixedExpense.month == month)
-    )
-    variable_expenses_result = await session.exec(
-        select(VariableExpense).where(VariableExpense.year == year, VariableExpense.month == month)
-    )
-    cards_result = await session.exec(select(Card).where(Card.is_active.is_(True)))
-
-    cards = list(cards_result.all())
-    transactions: list[Transaction] = []
-    if cards:
-        transactions_result = await session.exec(
-            select(Transaction).where(
-                Transaction.card_id.in_([card.id for card in cards]),
-                func.strftime("%Y", Transaction.date) == f"{year:04d}",
-                func.strftime("%m", Transaction.date) == f"{month:02d}",
-            )
-        )
-        transactions = list(transactions_result.all())
-
-    return calculate_monthly_summary(
-        year=year,
-        month=month,
-        incomes=list(incomes_result.all()),
-        fixed_expenses=list(fixed_expenses_result.all()),
-        variable_expenses=list(variable_expenses_result.all()),
-        cards=cards,
-        transactions=transactions,
-    )
+    return await fetch_monthly_summary(session, year, month)

@@ -1,4 +1,6 @@
 from pydantic import BaseModel
+from sqlmodel import func, select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from lastro.models.card import Card
 from lastro.models.fixed_expense import FixedExpense
@@ -71,4 +73,41 @@ def calculate_monthly_summary(
         card_spending=card_spending,
         card_spending_total_cents=card_spending_total_cents,
         balance_cents=balance_cents,
+    )
+
+
+async def fetch_monthly_summary(session: AsyncSession, year: int, month: int) -> MonthlySummary:
+    """Consulta o banco e monta o resumo mensal estilo planilha. Usado pelo
+    endpoint /monthly-summary e pela tool do analista IA."""
+    incomes_result = await session.exec(
+        select(Income).where(Income.year == year, Income.month == month)
+    )
+    fixed_expenses_result = await session.exec(
+        select(FixedExpense).where(FixedExpense.year == year, FixedExpense.month == month)
+    )
+    variable_expenses_result = await session.exec(
+        select(VariableExpense).where(VariableExpense.year == year, VariableExpense.month == month)
+    )
+    cards_result = await session.exec(select(Card).where(Card.is_active.is_(True)))
+
+    cards = list(cards_result.all())
+    transactions: list[Transaction] = []
+    if cards:
+        transactions_result = await session.exec(
+            select(Transaction).where(
+                Transaction.card_id.in_([card.id for card in cards]),
+                func.strftime("%Y", Transaction.date) == f"{year:04d}",
+                func.strftime("%m", Transaction.date) == f"{month:02d}",
+            )
+        )
+        transactions = list(transactions_result.all())
+
+    return calculate_monthly_summary(
+        year=year,
+        month=month,
+        incomes=list(incomes_result.all()),
+        fixed_expenses=list(fixed_expenses_result.all()),
+        variable_expenses=list(variable_expenses_result.all()),
+        cards=cards,
+        transactions=transactions,
     )
