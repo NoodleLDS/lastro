@@ -7,7 +7,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from lastro.db import get_session
 from lastro.models.contribution import Contribution
 from lastro.models.dividend import Dividend
-from lastro.models.position import AssetType, Position
+from lastro.models.position import Position
 from lastro.models.price_history import PriceHistory
 from lastro.models.sale import Sale
 from lastro.models.stock_split import StockSplit
@@ -198,9 +198,6 @@ async def refresh_quotes(session: AsyncSession = Depends(get_session)) -> list[P
     positions = result.all()
 
     for position in positions:
-        if position.asset_type == AssetType.FIXED_INCOME:
-            continue
-
         provider = get_quote_provider(position.asset_type)
         quote = await provider.get_quote(position.ticker)
         position.last_price_cents = quote.price_cents

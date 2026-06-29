@@ -6,12 +6,19 @@ from lastro.models.position import AssetType
 from lastro.services.quotes.brapi import BrapiProvider
 from lastro.services.quotes.coingecko import CoinGeckoProvider
 from lastro.services.quotes.dependency import get_quote_provider
+from lastro.services.quotes.tesouro_direto import TesouroDiretoProvider
 
 
 def test_crypto_retorna_coingecko_sem_precisar_de_token() -> None:
     provider = get_quote_provider(AssetType.CRYPTO)
 
     assert isinstance(provider, CoinGeckoProvider)
+
+
+def test_fixed_income_retorna_tesouro_direto_sem_precisar_de_token() -> None:
+    provider = get_quote_provider(AssetType.FIXED_INCOME)
+
+    assert isinstance(provider, TesouroDiretoProvider)
 
 
 def test_stock_sem_token_configurado_levanta_400() -> None:

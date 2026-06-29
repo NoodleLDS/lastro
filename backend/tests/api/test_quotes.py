@@ -65,19 +65,19 @@ async def test_refresh_quotes_atualiza_preco_e_calcula_total_return(
     assert body["total_return"]["current_value_cents"] == 617646
 
 
-async def test_refresh_quotes_pula_renda_fixa(
+async def test_refresh_quotes_atualiza_renda_fixa(
     client: AsyncClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     await _create_position(client, asset_type="fixed_income")
 
     monkeypatch.setattr(
         "lastro.api.positions.get_quote_provider",
-        lambda asset_type: _FakeQuoteProvider(1986),
+        lambda asset_type: _FakeQuoteProvider(417393),
     )
 
     response = await client.post("/positions/refresh-quotes")
     assert response.status_code == 200
-    assert response.json()[0]["last_price_cents"] is None
+    assert response.json()[0]["last_price_cents"] == 417393
 
 
 async def test_refresh_quotes_sem_token_retorna_400(
