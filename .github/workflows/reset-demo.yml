@@ -1,0 +1,18 @@
+name: Reset Demo
+
+on:
+  schedule:
+    - cron: "0 4 * * *"  # 04:00 UTC diariamente (01:00 BRT)
+  workflow_dispatch:
+
+jobs:
+  reset:
+    name: Reset demo data
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Call reset endpoint
+        run: |
+          curl -sf -X POST "${{ secrets.DEMO_API_URL }}/demo/reset" \
+            -H "X-Reset-Secret: ${{ secrets.DEMO_RESET_SECRET }}" \
+            || echo "Reset failed (non-fatal)"

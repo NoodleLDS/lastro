@@ -8,7 +8,16 @@ from lastro.services.llm.provider import LLMProvider
 
 def get_llm_provider() -> LLMProvider:
     """Provider de visão de fatura. Default: Ollama local (sem custo). Opt-in:
-    Claude API, ativado via LASTRO_LLM_PROVIDER=claude + LASTRO_ANTHROPIC_API_KEY."""
+    Claude API, ativado via LASTRO_LLM_PROVIDER=claude + LASTRO_ANTHROPIC_API_KEY.
+    LASTRO_LLM_PROVIDER=none desabilita IA (modo demo sem GPU)."""
+    if settings.llm_provider == "none":
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "IA não disponível na demo pública. "
+                "Rode localmente com Ollama para usar esta função."
+            ),
+        )
     if settings.llm_provider == "claude":
         if not settings.anthropic_api_key:
             raise HTTPException(

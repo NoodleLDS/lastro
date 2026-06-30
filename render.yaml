@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: lastro-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: LASTRO_DATABASE_URL
+        value: sqlite+aiosqlite:///./lastro.db
+      - key: LASTRO_DEMO_MODE
+        value: "true"
+      - key: LASTRO_LLM_PROVIDER
+        value: none
+      - key: LASTRO_ADMIN_USERNAME
+        value: admin
+      - key: LASTRO_ADMIN_PASSWORD
+        generateValue: true
+      - key: LASTRO_JWT_SECRET
+        generateValue: true
+      - key: LASTRO_DEMO_RESET_SECRET
+        generateValue: true
+    buildCommand: ""
+    startCommand: >
+      sh -c "uv run alembic upgrade head &&
+             uv run uvicorn lastro.main:app --host 0.0.0.0 --port $PORT"
+    healthCheckPath: /health

@@ -13,6 +13,7 @@ from lastro.api.cards import router as cards_router
 from lastro.api.categories import router as categories_router
 from lastro.api.contributions import router as contributions_router
 from lastro.api.dashboard import router as dashboard_router
+from lastro.api.demo import router as demo_router
 from lastro.api.dividends import router as dividends_router
 from lastro.api.emergency_reserve import router as emergency_reserve_router
 from lastro.api.health import router as health_router
@@ -24,13 +25,15 @@ from lastro.api.sales import router as sales_router
 from lastro.api.snapshots import router as snapshots_router
 from lastro.api.stock_splits import router as stock_splits_router
 from lastro.api.transactions import router as transactions_router
+from lastro.core.config import settings
 from lastro.core.logging import configure_logging
 from lastro.db import get_session
 from lastro.services.analytics.snapshot import record_monthly_snapshot
 from lastro.services.auth.bootstrap import ensure_admin_user
 from lastro.services.auth.security import decode_access_token
+from lastro.services.demo import seed as demo_seed
 
-PUBLIC_PATHS = {"/health", "/auth/login", "/docs", "/openapi.json"}
+PUBLIC_PATHS = {"/health", "/auth/login", "/docs", "/openapi.json", "/demo/reset"}
 
 
 @asynccontextmanager
@@ -38,6 +41,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     configure_logging()
     async for session in get_session():
         await ensure_admin_user(session)
+        if settings.demo_mode and await demo_seed.is_empty(session):
+            await demo_seed.run(session)
         await record_monthly_snapshot(session)
     yield
 
@@ -61,9 +66,14 @@ async def require_auth(
     return await call_next(request)
 
 
+_CORS_ORIGINS = [
+    "http://localhost:5173",
+    "https://noodleds.github.io",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=_CORS_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -71,6 +81,7 @@ app.add_middleware(
 
 app.include_router(health_router)
 app.include_router(auth_router)
+app.include_router(demo_router)
 app.include_router(admin_router)
 app.include_router(cards_router)
 app.include_router(categories_router)

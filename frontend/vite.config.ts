@@ -5,6 +5,8 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // GitHub Pages serves under /lastro/ — '/' for local dev
+  base: process.env.GITHUB_PAGES === 'true' ? '/lastro/' : '/',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

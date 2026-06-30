@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     admin_password: str = "admin"
     jwt_secret: str = "lastro-dev-secret-change-me"
     jwt_expire_minutes: int = 60 * 24 * 7
+    demo_mode: bool = False
+    demo_reset_secret: str | None = None
 
 
 settings = Settings()
