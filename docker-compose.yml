@@ -10,6 +10,7 @@ services:
     environment:
       LASTRO_DATABASE_URL: sqlite+aiosqlite:///./db/lastro.db
       LASTRO_OLLAMA_URL: http://ollama:11434
+      LASTRO_OLLAMA_MODEL: qwen2.5:7b
     depends_on:
       - ollama
     command: >
@@ -44,7 +45,7 @@ services:
     entrypoint: >
       sh -c "ollama serve &
              sleep 3 &&
-             ollama pull llama3.2:3b &&
+             ollama pull qwen2.5:7b &&
              ollama pull qwen2.5vl:3b &&
              wait"
 

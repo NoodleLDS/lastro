@@ -1,5 +1,6 @@
 import base64
 import json
+import re
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -171,6 +172,7 @@ class OllamaProvider:
             {"role": "user", "content": user_message},
         ]
         tools = TOOL_DEFINITIONS if session is not None else None
+        used_tools = False
 
         for _ in range(_MAX_TOOL_CALL_ROUNDS):
             try:
@@ -188,8 +190,10 @@ class OllamaProvider:
             message = body["message"]
             tool_calls = message.get("tool_calls")
             if not tool_calls or session is None:
+                _warn_if_unverified_numbers(message["content"], used_tools)
                 return message["content"]
 
+            used_tools = True
             messages.append(message)
             for call in tool_calls:
                 function = call["function"]
@@ -214,19 +218,24 @@ class OllamaProvider:
             {"role": "user", "content": user_message},
         ]
         tools = TOOL_DEFINITIONS if session is not None else None
+        used_tools = False
 
         for _ in range(_MAX_TOOL_CALL_ROUNDS):
             tool_calls = await self._resolve_tool_calls(messages, tools, session)
             if not tool_calls:
                 break
+            used_tools = True
             for call in tool_calls:
                 function = call["function"]
                 arguments = function.get("arguments") or {}
                 result = await execute_tool(session, function["name"], arguments)
                 messages.append({"role": "tool", "content": result})
 
+        final_content_parts: list[str] = []
         async for chunk in self._stream_final_answer(messages):
+            final_content_parts.append(chunk.content)
             yield chunk
+        _warn_if_unverified_numbers("".join(final_content_parts), used_tools)
 
     async def _resolve_tool_calls(
         self,
@@ -293,6 +302,15 @@ class OllamaProvider:
         except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError) as exc:
             logger.warning("ollama_complete_stream_indisponivel", error=str(exc))
             raise HTTPException(status_code=503, detail=_OLLAMA_UNAVAILABLE_DETAIL) from exc
+
+
+_NUMERIC_CLAIM_RE = re.compile(r"R\$\s?[\d.,]+|\d+[.,]\d+%|\bcontas?\b", re.IGNORECASE)
+
+
+def _warn_if_unverified_numbers(content: str, used_tools: bool) -> None:
+    """Loga suspeita de alucinação: resposta com números/contas sem ter consultado tool."""
+    if not used_tools and _NUMERIC_CLAIM_RE.search(content):
+        logger.warning("ollama_resposta_sem_tool_call_com_numeros", content=content)
 
 
 def _parse_category(raw_content: str) -> str | None:
