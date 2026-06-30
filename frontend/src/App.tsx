@@ -55,7 +55,11 @@ function App() {
     <main className="mx-auto flex min-h-svh max-w-7xl flex-col gap-8 p-8">
       <header className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <img src={`${import.meta.env.BASE_URL}branding/lastro-symbol.png`} alt="Lastro" className="size-9" />
+          <img
+            src={`${import.meta.env.BASE_URL}branding/lastro-symbol.png`}
+            alt="Lastro"
+            className="size-9"
+          />
           <div>
             <h1 className="text-xl font-semibold leading-tight">Lastro</h1>
             <p className="text-xs text-muted-foreground">gestão financeira e patrimônio</p>

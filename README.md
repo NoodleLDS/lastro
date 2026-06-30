@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/NoodleLDS/lastro/actions/workflows/ci.yml/badge.svg)](https://github.com/NoodleLDS/lastro/actions/workflows/ci.yml)
 [![Docker Build](https://github.com/NoodleLDS/lastro/actions/workflows/docker-build.yml/badge.svg)](https://github.com/NoodleLDS/lastro/actions/workflows/docker-build.yml)
+[![Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://noodlelds.github.io/lastro/)
 
 Local personal finance and net worth management app. Single-user, runs on your own machine — no cloud, no remote server, no third party seeing your financial data.
 

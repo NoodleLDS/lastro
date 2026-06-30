@@ -3,7 +3,7 @@
   "vcs": { "enabled": false, "clientKind": "git", "useIgnoreFile": false },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!public", "!src/components/ui"]
+    "includes": ["**", "!public", "!dist", "!src/components/ui"]
   },
   "formatter": {
     "enabled": true,
@@ -13,7 +13,10 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "style": {
+        "noNonNullAssertion": "off"
+      }
     }
   },
   "javascript": {

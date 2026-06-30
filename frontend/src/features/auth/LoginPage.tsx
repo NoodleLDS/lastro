@@ -27,7 +27,11 @@ export function LoginPage() {
     <main className="flex min-h-svh items-center justify-center p-8">
       <Card className="w-full max-w-sm">
         <CardHeader className="flex flex-col items-center gap-3 text-center [&]:grid-rows-none">
-          <img src={`${import.meta.env.BASE_URL}branding/lastro-symbol.png`} alt="Lastro" className="size-14" />
+          <img
+            src={`${import.meta.env.BASE_URL}branding/lastro-symbol.png`}
+            alt="Lastro"
+            className="size-14"
+          />
           <div>
             <h1 className="text-xl font-semibold leading-tight">Lastro</h1>
             <p className="text-xs text-muted-foreground">gestão financeira e patrimônio</p>
