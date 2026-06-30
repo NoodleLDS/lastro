@@ -1,5 +1,8 @@
 # Lastro
 
+[![CI](https://github.com/NoodleLDS/lastro/actions/workflows/ci.yml/badge.svg)](https://github.com/NoodleLDS/lastro/actions/workflows/ci.yml)
+[![Docker Build](https://github.com/NoodleLDS/lastro/actions/workflows/docker-build.yml/badge.svg)](https://github.com/NoodleLDS/lastro/actions/workflows/docker-build.yml)
+
 Local personal finance and net worth management app. Single-user, runs on your own machine — no cloud, no remote server, no third party seeing your financial data.
 
 Replaces a spreadsheet: data lives in a SQLite database, quotes come in live (B3, crypto, CDI/Selic/IPCA, Tesouro Direto), and a local AI layer (Ollama) categorizes transactions, reads bill screenshots, and answers as a financial analyst with memory of past conversations.

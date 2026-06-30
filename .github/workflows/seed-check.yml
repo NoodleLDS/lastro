@@ -1,0 +1,42 @@
+name: Seed Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/scripts/seed_demo.py"
+      - "backend/src/lastro/models/**"
+      - "backend/alembic/**"
+  pull_request:
+    paths:
+      - "backend/scripts/seed_demo.py"
+      - "backend/src/lastro/models/**"
+      - "backend/alembic/**"
+
+jobs:
+  seed:
+    name: Run seed against fresh DB
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Run migrations
+        run: uv run alembic upgrade head
+
+      - name: Run seed
+        run: uv run python scripts/seed_demo.py
