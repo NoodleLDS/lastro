@@ -12,9 +12,10 @@ from pathlib import Path
 
 import httpx
 
-# Caminho fixo do projeto: o .exe pode ser movido (ex.: área de trabalho),
-# então não derivamos isso de __file__/sys.executable.
-PROJECT_ROOT = Path(r"C:\Users\Lucas\Downloads\lastro")
+# PROJECT_ROOT: pasta raiz do repositório.
+# O .exe compilado define LASTRO_PROJECT_ROOT via spec; em dev, dois níveis acima deste arquivo.
+import os as _os
+PROJECT_ROOT = Path(_os.environ.get("LASTRO_PROJECT_ROOT", Path(__file__).resolve().parent.parent))
 LOG_PATH = PROJECT_ROOT / "launcher" / "lastro_launcher.log"
 LOGO_PATH = PROJECT_ROOT / "frontend" / "public" / "branding" / "lastro-logo-horizontal-dark-bg.png"
 WEB_URL = "http://localhost:5173"
