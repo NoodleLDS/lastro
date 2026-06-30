@@ -68,7 +68,7 @@ async def require_auth(
 
 _CORS_ORIGINS = [
     "http://localhost:5173",
-    "https://noodleds.github.io",
+    "https://noodlelds.github.io",
 ]
 
 app.add_middleware(
