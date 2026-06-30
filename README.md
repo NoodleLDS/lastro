@@ -15,6 +15,33 @@ Replaces a spreadsheet: data lives in a SQLite database, quotes come in live (B3
 
 Architecture details, domain invariants, and the phase roadmap live in [`CLAUDE.md`](./CLAUDE.md).
 
+## Quick demo (try it right now)
+
+```bash
+git clone https://github.com/NoodleLDS/lastro.git
+cd lastro
+
+# 1. Configure environment
+cp backend/.env.example backend/.env   # edit LASTRO_BRAPI_TOKEN (free at brapi.dev)
+cp frontend/.env.example frontend/.env
+
+# 2. Start services (Docker required)
+docker compose up -d
+
+# 3. Run migrations and seed demo data
+docker compose exec api uv run alembic upgrade head
+docker compose exec api uv run python scripts/seed_demo.py
+
+# 4. Open in browser
+open http://localhost:5173   # or just navigate there
+```
+
+**Login:** `admin` / `demo1234`
+
+The seed creates fictitious transactions (3 months), portfolio positions, income, and emergency reserve — enough to exercise the full UI without any personal data.
+
+> **Personalizing the AI analyst:** after logging in, go to _Analista → Memória / Instruções_ and edit the analyst profile (Section 12 of the master prompt) with your real income, positions, and goals. That text is loaded into every chat context, so the analyst answers based on your actual situation.
+
 ## Running it
 
 ### Option 1 — one click (Windows)
