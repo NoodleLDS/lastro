@@ -25,7 +25,7 @@ from lastro.services.auth.security import hash_password
 
 
 async def is_empty(session: AsyncSession) -> bool:
-    result = await session.exec(select(Card))
+    result = await session.exec(select(User).where(User.username == "demo"))
     return result.first() is None
 
 
