@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from lastro.core.config import settings
 from lastro.db import get_session
 from lastro.models.user import User
 from lastro.schemas.auth import LoginRequest, LoginResponse
@@ -14,6 +15,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 async def login(
     payload: LoginRequest, session: AsyncSession = Depends(get_session)
 ) -> LoginResponse:
+    if settings.demo_mode:
+        return LoginResponse(access_token=create_access_token("demo"))
     result = await session.exec(select(User).where(User.username == payload.username))
     user = result.first()
     if user is None or not verify_password(payload.password, user.password_hash):
