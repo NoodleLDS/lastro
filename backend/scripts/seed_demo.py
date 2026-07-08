@@ -325,5 +325,5 @@ with Session(engine) as session:
         session.commit()
         print(f"✓ {len(fixed) * 3} fixed expense entries")
 
-print("\nSeed concluído. Acesse o Lastro em http://localhost:5173")
+print("\nSeed concluído. Acesse o Lastro em http://localhost:5180")
 print("Login: admin / demo1234")

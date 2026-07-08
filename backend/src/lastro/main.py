@@ -67,7 +67,7 @@ async def require_auth(
 
 
 _CORS_ORIGINS = [
-    "http://localhost:5173",
+    "http://localhost:5180",
     "https://noodlelds.github.io",
 ]
 

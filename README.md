@@ -41,7 +41,7 @@ docker compose exec api uv run alembic upgrade head
 docker compose exec api uv run python scripts/seed_demo.py
 
 # 4. Open in browser
-open http://localhost:5173   # or just navigate there
+open http://localhost:5180   # or just navigate there
 ```
 
 **Login:** `admin` / `demo1234`
@@ -67,7 +67,7 @@ This brings up the Docker containers, waits for the API to respond, and opens th
 just up          # docker compose up (api + web + ollama)
 ```
 
-Then open `http://localhost:5173`.
+Then open `http://localhost:5180`.
 
 Without `just` installed, the equivalent is: `docker compose up`.
 
