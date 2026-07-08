@@ -42,6 +42,18 @@ function groupByAssetType(positions: Position[]) {
   })
 }
 
+function positionValueCents(position: Position): number {
+  if (position.total_return) {
+    return position.total_return.current_value_cents
+  }
+  const price = position.last_price_cents ?? position.average_price_cents
+  return Math.round(position.quantity * price)
+}
+
+function groupTotalCents(group: Position[]): number {
+  return group.reduce((sum, position) => sum + positionValueCents(position), 0)
+}
+
 export function PositionsTable({
   onSelectPosition,
 }: {
@@ -82,6 +94,7 @@ export function PositionsTable({
                 <TableHead>Qtd</TableHead>
                 <TableHead className="text-right">Preço médio</TableHead>
                 <TableHead className="text-right">Preço atual</TableHead>
+                <TableHead className="text-right">Valor total</TableHead>
                 <TableHead className="text-right">Total return</TableHead>
                 <TableHead className="text-right">Margem de segurança</TableHead>
               </TableRow>
@@ -91,7 +104,7 @@ export function PositionsTable({
                 <Fragment key={assetType}>
                   <TableRow className="hover:bg-transparent">
                     <TableCell
-                      colSpan={7}
+                      colSpan={8}
                       className="bg-muted/30 py-1.5 text-xs font-semibold text-muted-foreground"
                     >
                       {ASSET_TYPE_LABELS[assetType] ?? assetType}
@@ -126,6 +139,9 @@ export function PositionsTable({
                           ? formatCents(position.last_price_cents)
                           : '—'}
                       </TableCell>
+                      <TableCell className="text-right font-medium tabular-nums">
+                        {formatCents(positionValueCents(position))}
+                      </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {position.total_return ? (
                           <span className="inline-flex items-center justify-end gap-1.5">
@@ -158,6 +174,15 @@ export function PositionsTable({
                       </TableCell>
                     </TableRow>
                   ))}
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell colSpan={5} className="text-right text-xs text-muted-foreground">
+                      Total {ASSET_TYPE_LABELS[assetType] ?? assetType}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold tabular-nums">
+                      {formatCents(groupTotalCents(group))}
+                    </TableCell>
+                    <TableCell colSpan={2} />
+                  </TableRow>
                 </Fragment>
               ))}
             </TableBody>
@@ -166,9 +191,14 @@ export function PositionsTable({
           <div className="flex flex-col gap-4 md:hidden">
             {groupByAssetType(positions).map(([assetType, group]) => (
               <div key={assetType} className="flex flex-col gap-2">
-                <h3 className="text-xs font-semibold text-muted-foreground">
-                  {ASSET_TYPE_LABELS[assetType] ?? assetType}
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold text-muted-foreground">
+                    {ASSET_TYPE_LABELS[assetType] ?? assetType}
+                  </h3>
+                  <span className="text-xs font-semibold tabular-nums text-muted-foreground">
+                    {formatCents(groupTotalCents(group))}
+                  </span>
+                </div>
                 {group.map((position) => (
                   <button
                     type="button"
@@ -196,6 +226,12 @@ export function PositionsTable({
                         {position.last_price_cents !== null
                           ? formatCents(position.last_price_cents)
                           : formatCents(position.average_price_cents)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Valor total</span>
+                      <span className="font-medium tabular-nums">
+                        {formatCents(positionValueCents(position))}
                       </span>
                     </div>
                     {position.total_return && (
