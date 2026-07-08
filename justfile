@@ -27,3 +27,6 @@ upgrade:
 
 build-launcher:
     cd launcher && uv run pyinstaller --onefile --windowed --name Lastro --icon lastro.ico lastro_launcher.py
+
+build-shell:
+    cd frontend && pnpm shell:build

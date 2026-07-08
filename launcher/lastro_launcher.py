@@ -1,4 +1,8 @@
 import json
+
+# PROJECT_ROOT: pasta raiz do repositório.
+# O .exe compilado define LASTRO_PROJECT_ROOT via spec; em dev, dois níveis acima deste arquivo.
+import os as _os
 import shutil
 import subprocess
 import sys
@@ -12,24 +16,22 @@ from pathlib import Path
 
 import httpx
 
-# PROJECT_ROOT: pasta raiz do repositório.
-# O .exe compilado define LASTRO_PROJECT_ROOT via spec; em dev, dois níveis acima deste arquivo.
-import os as _os
 PROJECT_ROOT = Path(_os.environ.get("LASTRO_PROJECT_ROOT", Path(__file__).resolve().parent.parent))
 LOG_PATH = PROJECT_ROOT / "launcher" / "lastro_launcher.log"
 LOGO_PATH = PROJECT_ROOT / "frontend" / "public" / "branding" / "lastro-logo-horizontal-dark-bg.png"
-WEB_URL = "http://localhost:5173"
+WEB_URL = "http://localhost:5180"
 API_HEALTH_URL = "http://localhost:8000/health"
 CHROME_PATHS = [
     r"C:\Program Files\Google\Chrome\Application\chrome.exe",
     r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
 ]
+LASTRO_SHELL_PATH = PROJECT_ROOT / "frontend" / "src-tauri" / "target" / "release" / "lastro.exe"
 DOCKER_FALLBACK_PATHS = [
     r"C:\Program Files\Docker\Docker\resources\bin\docker.exe",
 ]
 DOCKER_DESKTOP_EXE = r"C:\Program Files\Docker\Docker\Docker Desktop.exe"
 CONTROL_SERVER_PORT = 9100
-ALLOWED_ORIGINS = {"http://localhost:5173"}
+ALLOWED_ORIGINS = {"http://localhost:5180"}
 
 
 def find_docker() -> str:
@@ -113,6 +115,15 @@ def open_in_chrome(url: str) -> None:
             subprocess.Popen([chrome_path, "--new-window", url])
             return
     webbrowser.open(url)
+
+
+def open_app_window(url: str) -> None:
+    """Abre o Lastro em janela nativa (Tauri); cai pro Chrome se o shell não estiver buildado."""
+    if LASTRO_SHELL_PATH.exists():
+        subprocess.Popen([str(LASTRO_SHELL_PATH)], cwd=LASTRO_SHELL_PATH.parent)
+        return
+    log(f"Shell Tauri não encontrado em {LASTRO_SHELL_PATH}, caindo para o Chrome.")
+    open_in_chrome(url)
 
 
 def log(message: str) -> None:
@@ -282,9 +293,9 @@ def run_startup(window: LoadingWindow) -> None:
         window.root.after(0, window.show_error, message)
         return
 
-    log("Abrindo o Lastro no Chrome...")
+    log("Abrindo o Lastro...")
     window.root.after(0, window.set_status, "Lastro rodando — pode minimizar esta janela.")
-    open_in_chrome(WEB_URL)
+    open_app_window(WEB_URL)
     window.root.after(0, window.enable_exit_button)
 
 

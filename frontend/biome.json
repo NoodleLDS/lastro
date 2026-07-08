@@ -3,7 +3,7 @@
   "vcs": { "enabled": false, "clientKind": "git", "useIgnoreFile": false },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!public", "!dist", "!src/components/ui"]
+    "includes": ["**", "!public", "!dist", "!src/components/ui", "!src-tauri"]
   },
   "formatter": {
     "enabled": true,
