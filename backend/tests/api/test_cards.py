@@ -181,7 +181,5 @@ async def test_unmark_invoice_payment_not_marked_is_noop(client: AsyncClient) ->
 
 
 async def test_mark_invoice_payment_card_not_found(client: AsyncClient) -> None:
-    response = await client.put(
-        "/cards/999/invoice-payment", params={"year": 2026, "month": 6}
-    )
+    response = await client.put("/cards/999/invoice-payment", params={"year": 2026, "month": 6})
     assert response.status_code == 404

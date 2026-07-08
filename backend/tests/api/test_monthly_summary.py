@@ -153,9 +153,7 @@ async def test_monthly_summary_reflete_fatura_marcada_como_paga(client: AsyncCli
         "/transactions/quick-entry",
         json={"card_id": card["id"], "raw": "mercado 100", "date": "2026-06-10"},
     )
-    await client.put(
-        f"/cards/{card['id']}/invoice-payment", params={"year": 2026, "month": 6}
-    )
+    await client.put(f"/cards/{card['id']}/invoice-payment", params={"year": 2026, "month": 6})
 
     response = await client.get("/monthly-summary", params={"year": 2026, "month": 6})
     assert response.status_code == 200
