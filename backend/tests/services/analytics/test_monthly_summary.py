@@ -1,4 +1,5 @@
 from lastro.models.card import Card
+from lastro.models.card_invoice_payment import CardInvoicePayment
 from lastro.models.fixed_expense import FixedExpense
 from lastro.models.income import Income
 from lastro.models.transaction import Transaction
@@ -84,6 +85,18 @@ def test_resumo_inclui_cartao_ativo_sem_transacao_no_mes_com_total_zero() -> Non
     assert len(summary.card_spending) == 1
     assert summary.card_spending[0].card_id == 1
     assert summary.card_spending[0].total_cents == 0
+    assert summary.card_spending[0].is_paid is False
+
+
+def test_resumo_marca_fatura_paga_quando_ha_invoice_payment_do_cartao_e_mes() -> None:
+    cards = [_card(1, "PicPay"), _card(2, "Inter")]
+    invoice_payments = [CardInvoicePayment(card_id=1, year=2026, month=6)]
+
+    summary = calculate_monthly_summary(2026, 6, [], [], [], cards, [], invoice_payments)
+
+    by_card = {breakdown.card_id: breakdown for breakdown in summary.card_spending}
+    assert by_card[1].is_paid is True
+    assert by_card[2].is_paid is False
 
 
 def test_resumo_so_agrega_cartoes_recebidos_pelo_chamador() -> None:

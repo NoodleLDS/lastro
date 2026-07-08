@@ -3,6 +3,7 @@ from sqlmodel import func, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from lastro.models.card import Card
+from lastro.models.card_invoice_payment import CardInvoicePayment
 from lastro.models.fixed_expense import FixedExpense
 from lastro.models.income import Income
 from lastro.models.transaction import Transaction
@@ -13,6 +14,7 @@ class CardSpendingBreakdown(BaseModel):
     card_id: int
     card_name: str
     total_cents: int
+    is_paid: bool
 
 
 class MonthlySummary(BaseModel):
@@ -34,9 +36,10 @@ def calculate_monthly_summary(
     variable_expenses: list[VariableExpense],
     cards: list[Card],
     transactions: list[Transaction],
+    invoice_payments: list[CardInvoicePayment] | None = None,
 ) -> MonthlySummary:
     """Resumo mensal estilo planilha: cartões já filtrados por ativos pelo
-    chamador, transações já filtradas pelo mês/ano pedido."""
+    chamador, transações e pagamentos de fatura já filtrados pelo mês/ano pedido."""
     income_total_cents = sum(income.amount_cents for income in incomes)
     fixed_expense_total_cents = sum(expense.amount_cents for expense in fixed_expenses)
     variable_expense_total_cents = sum(expense.amount_cents for expense in variable_expenses)
@@ -47,11 +50,14 @@ def calculate_monthly_summary(
             spending_by_card_id.get(transaction.card_id, 0) + transaction.amount_cents
         )
 
+    paid_card_ids = {payment.card_id for payment in invoice_payments or []}
+
     card_spending = [
         CardSpendingBreakdown(
             card_id=card.id,
             card_name=card.name,
             total_cents=spending_by_card_id.get(card.id, 0),
+            is_paid=card.id in paid_card_ids,
         )
         for card in cards
     ]
@@ -92,15 +98,26 @@ async def fetch_monthly_summary(session: AsyncSession, year: int, month: int) ->
 
     cards = list(cards_result.all())
     transactions: list[Transaction] = []
+    invoice_payments: list[CardInvoicePayment] = []
     if cards:
+        card_ids = [card.id for card in cards]
         transactions_result = await session.exec(
             select(Transaction).where(
-                Transaction.card_id.in_([card.id for card in cards]),
+                Transaction.card_id.in_(card_ids),
                 func.strftime("%Y", Transaction.date) == f"{year:04d}",
                 func.strftime("%m", Transaction.date) == f"{month:02d}",
             )
         )
         transactions = list(transactions_result.all())
+
+        invoice_payments_result = await session.exec(
+            select(CardInvoicePayment).where(
+                CardInvoicePayment.card_id.in_(card_ids),
+                CardInvoicePayment.year == year,
+                CardInvoicePayment.month == month,
+            )
+        )
+        invoice_payments = list(invoice_payments_result.all())
 
     return calculate_monthly_summary(
         year=year,
@@ -110,4 +127,5 @@ async def fetch_monthly_summary(session: AsyncSession, year: int, month: int) ->
         variable_expenses=list(variable_expenses_result.all()),
         cards=cards,
         transactions=transactions,
+        invoice_payments=invoice_payments,
     )

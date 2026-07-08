@@ -1,11 +1,17 @@
+import { Check } from 'lucide-react'
 import { CountUpMoneyValue } from '@/components/money-value'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useMarkInvoicePaid, useUnmarkInvoicePaid } from '@/features/cards/useCardInvoicePayment'
 import { formatCents } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { useMonthlySummary } from './useMonthlySummary'
 
 export function MonthlySummaryCard({ year, month }: { year: number; month: number }) {
   const { data, isLoading } = useMonthlySummary(year, month)
+  const markInvoicePaid = useMarkInvoicePaid()
+  const unmarkInvoicePaid = useUnmarkInvoicePaid()
 
   if (isLoading) {
     return (
@@ -56,11 +62,36 @@ export function MonthlySummaryCard({ year, month }: { year: number; month: numbe
           </div>
 
           {data.card_spending.length > 0 && (
-            <div className="flex flex-col gap-1 border-t border-border pt-3">
+            <div className="flex flex-col gap-2 border-t border-border pt-3">
               {data.card_spending.map((card) => (
-                <div key={card.card_id} className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{card.card_name}</span>
-                  <span className="tabular-nums">{formatCents(card.total_cents)}</span>
+                <div key={card.card_id} className="flex items-center justify-between gap-2">
+                  <span
+                    className={cn(
+                      'text-muted-foreground',
+                      card.is_paid && 'text-success line-through',
+                    )}
+                  >
+                    {card.card_name}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="tabular-nums">{formatCents(card.total_cents)}</span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={card.is_paid ? 'default' : 'outline'}
+                      className={cn(
+                        card.is_paid && 'bg-success text-success-foreground hover:bg-success/90',
+                      )}
+                      onClick={() =>
+                        card.is_paid
+                          ? unmarkInvoicePaid.mutate({ cardId: card.card_id, year, month })
+                          : markInvoicePaid.mutate({ cardId: card.card_id, year, month })
+                      }
+                    >
+                      {card.is_paid && <Check className="size-4" />}
+                      {card.is_paid ? 'Paga' : 'Marcar paga'}
+                    </Button>
+                  </div>
                 </div>
               ))}
               <div className="flex items-center justify-between pt-1 font-medium">

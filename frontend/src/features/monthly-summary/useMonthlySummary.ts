@@ -6,6 +6,7 @@ const cardSpendingSchema = z.object({
   card_id: z.number(),
   card_name: z.string(),
   total_cents: z.number(),
+  is_paid: z.boolean(),
 })
 
 const monthlySummarySchema = z.object({
