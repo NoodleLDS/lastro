@@ -9,6 +9,7 @@ const variableExpenseSchema = z.object({
   year: z.number(),
   month: z.number(),
   category_id: z.number().nullable(),
+  is_paid: z.boolean(),
 })
 
 export type VariableExpense = z.infer<typeof variableExpenseSchema>
@@ -51,6 +52,7 @@ export function useUpdateVariableExpense() {
       description?: string
       amount_cents?: number
       category_id?: number
+      is_paid?: boolean
     }) => variableExpenseSchema.parse(await apiPatch(`/variable-expenses/${id}`, input)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['variable-expenses'] })

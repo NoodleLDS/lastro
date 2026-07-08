@@ -66,6 +66,7 @@ async def test_create_and_list_fixed_expense(client: AsyncClient) -> None:
         json={"description": "Colégio", "amount_cents": 12_900, "year": 2026, "month": 6},
     )
     assert response.status_code == 201
+    assert response.json()["is_paid"] is False
 
     response = await client.get("/fixed-expenses", params={"year": 2026, "month": 6})
     assert len(response.json()) == 1
@@ -77,9 +78,40 @@ async def test_create_and_list_variable_expense(client: AsyncClient) -> None:
         json={"description": "Luz", "amount_cents": 20_000, "year": 2026, "month": 6},
     )
     assert response.status_code == 201
+    assert response.json()["is_paid"] is False
 
     response = await client.get("/variable-expenses", params={"year": 2026, "month": 6})
     assert len(response.json()) == 1
+
+
+async def test_mark_fixed_expense_as_paid(client: AsyncClient) -> None:
+    created = (
+        await client.post(
+            "/fixed-expenses",
+            json={"description": "Colégio", "amount_cents": 12_900, "year": 2026, "month": 6},
+        )
+    ).json()
+
+    response = await client.patch(f"/fixed-expenses/{created['id']}", json={"is_paid": True})
+    assert response.status_code == 200
+    assert response.json()["is_paid"] is True
+
+    response = await client.patch(f"/fixed-expenses/{created['id']}", json={"is_paid": False})
+    assert response.status_code == 200
+    assert response.json()["is_paid"] is False
+
+
+async def test_mark_variable_expense_as_paid(client: AsyncClient) -> None:
+    created = (
+        await client.post(
+            "/variable-expenses",
+            json={"description": "Luz", "amount_cents": 20_000, "year": 2026, "month": 6},
+        )
+    ).json()
+
+    response = await client.patch(f"/variable-expenses/{created['id']}", json={"is_paid": True})
+    assert response.status_code == 200
+    assert response.json()["is_paid"] is True
 
 
 async def test_monthly_summary_end_to_end(client: AsyncClient) -> None:
@@ -109,10 +141,28 @@ async def test_monthly_summary_end_to_end(client: AsyncClient) -> None:
     assert body["fixed_expense_total_cents"] == 12_300
     assert body["variable_expense_total_cents"] == 20_000
     assert body["card_spending"] == [
-        {"card_id": card["id"], "card_name": "PicPay", "total_cents": 10_000}
+        {"card_id": card["id"], "card_name": "PicPay", "total_cents": 10_000, "is_paid": False}
     ]
     assert body["card_spending_total_cents"] == 10_000
     assert body["balance_cents"] == 654_071 - 12_300 - 20_000 - 10_000
+
+
+async def test_monthly_summary_reflete_fatura_marcada_como_paga(client: AsyncClient) -> None:
+    card = (await client.post("/cards", json={"name": "PicPay"})).json()
+    await client.post(
+        "/transactions/quick-entry",
+        json={"card_id": card["id"], "raw": "mercado 100", "date": "2026-06-10"},
+    )
+    await client.put(
+        f"/cards/{card['id']}/invoice-payment", params={"year": 2026, "month": 6}
+    )
+
+    response = await client.get("/monthly-summary", params={"year": 2026, "month": 6})
+    assert response.status_code == 200
+    assert response.json()["card_spending"][0]["is_paid"] is True
+
+    response = await client.get("/monthly-summary", params={"year": 2026, "month": 7})
+    assert response.json()["card_spending"][0]["is_paid"] is False
 
 
 async def test_monthly_summary_sem_lancamentos_retorna_zeros(client: AsyncClient) -> None:

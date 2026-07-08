@@ -39,6 +39,7 @@ class FixedExpenseUpdate(BaseModel):
     year: int | None = None
     month: int | None = None
     category_id: int | None = None
+    is_paid: bool | None = None
 
 
 class FixedExpenseRead(BaseModel):
@@ -50,6 +51,7 @@ class FixedExpenseRead(BaseModel):
     year: int
     month: int
     category_id: int | None
+    is_paid: bool
 
 
 class VariableExpenseCreate(BaseModel):
@@ -66,6 +68,7 @@ class VariableExpenseUpdate(BaseModel):
     year: int | None = None
     month: int | None = None
     category_id: int | None = None
+    is_paid: bool | None = None
 
 
 class VariableExpenseRead(BaseModel):
@@ -77,3 +80,4 @@ class VariableExpenseRead(BaseModel):
     year: int
     month: int
     category_id: int | None
+    is_paid: bool

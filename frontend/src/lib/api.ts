@@ -39,6 +39,12 @@ export async function apiGet<T>(path: string): Promise<T> {
   return handleResponse<T>(response)
 }
 
+export async function apiGetOrNull<T>(path: string): Promise<T | null> {
+  const response = await fetch(`${API_BASE_URL}${path}`, { headers: authHeaders() })
+  if (response.status === 404) return null
+  return handleResponse<T>(response)
+}
+
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',

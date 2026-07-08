@@ -9,6 +9,7 @@ const fixedExpenseSchema = z.object({
   year: z.number(),
   month: z.number(),
   category_id: z.number().nullable(),
+  is_paid: z.boolean(),
 })
 
 export type FixedExpense = z.infer<typeof fixedExpenseSchema>
@@ -51,6 +52,7 @@ export function useUpdateFixedExpense() {
       description?: string
       amount_cents?: number
       category_id?: number
+      is_paid?: boolean
     }) => fixedExpenseSchema.parse(await apiPatch(`/fixed-expenses/${id}`, input)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fixed-expenses'] })

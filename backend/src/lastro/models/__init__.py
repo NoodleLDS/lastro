@@ -1,6 +1,7 @@
 from lastro.models.allocation_target import AllocationTarget
 from lastro.models.analyst_instructions import AnalystInstructions
 from lastro.models.card import Card
+from lastro.models.card_invoice_payment import CardInvoicePayment
 from lastro.models.category import Category
 from lastro.models.contribution import Contribution
 from lastro.models.conversation import Conversation, Message, MessageRole
@@ -23,6 +24,7 @@ __all__ = [
     "AnalystInstructions",
     "AssetType",
     "Card",
+    "CardInvoicePayment",
     "Category",
     "Contribution",
     "Conversation",

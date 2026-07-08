@@ -115,3 +115,73 @@ async def test_billing_cycle_sem_closing_day_cai_no_mes_calendario(
 async def test_billing_cycle_card_not_found(client: AsyncClient) -> None:
     response = await client.get("/cards/999/billing-cycle", params={"year": 2026, "month": 6})
     assert response.status_code == 404
+
+
+async def test_invoice_payment_not_marked_returns_404(client: AsyncClient) -> None:
+    created = (await client.post("/cards", json={"name": "Nubank"})).json()
+
+    response = await client.get(
+        f"/cards/{created['id']}/invoice-payment", params={"year": 2026, "month": 6}
+    )
+    assert response.status_code == 404
+
+
+async def test_mark_and_unmark_invoice_payment(client: AsyncClient) -> None:
+    created = (await client.post("/cards", json={"name": "Nubank"})).json()
+
+    response = await client.put(
+        f"/cards/{created['id']}/invoice-payment", params={"year": 2026, "month": 6}
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["card_id"] == created["id"]
+    assert body["year"] == 2026
+    assert body["month"] == 6
+
+    response = await client.get(
+        f"/cards/{created['id']}/invoice-payment", params={"year": 2026, "month": 6}
+    )
+    assert response.status_code == 200
+
+    response = await client.get(
+        f"/cards/{created['id']}/invoice-payment", params={"year": 2026, "month": 7}
+    )
+    assert response.status_code == 404
+
+    response = await client.delete(
+        f"/cards/{created['id']}/invoice-payment", params={"year": 2026, "month": 6}
+    )
+    assert response.status_code == 204
+
+    response = await client.get(
+        f"/cards/{created['id']}/invoice-payment", params={"year": 2026, "month": 6}
+    )
+    assert response.status_code == 404
+
+
+async def test_mark_invoice_payment_is_idempotent(client: AsyncClient) -> None:
+    created = (await client.post("/cards", json={"name": "Nubank"})).json()
+
+    first = await client.put(
+        f"/cards/{created['id']}/invoice-payment", params={"year": 2026, "month": 6}
+    )
+    second = await client.put(
+        f"/cards/{created['id']}/invoice-payment", params={"year": 2026, "month": 6}
+    )
+    assert first.json()["paid_at"] == second.json()["paid_at"]
+
+
+async def test_unmark_invoice_payment_not_marked_is_noop(client: AsyncClient) -> None:
+    created = (await client.post("/cards", json={"name": "Nubank"})).json()
+
+    response = await client.delete(
+        f"/cards/{created['id']}/invoice-payment", params={"year": 2026, "month": 6}
+    )
+    assert response.status_code == 204
+
+
+async def test_mark_invoice_payment_card_not_found(client: AsyncClient) -> None:
+    response = await client.put(
+        "/cards/999/invoice-payment", params={"year": 2026, "month": 6}
+    )
+    assert response.status_code == 404

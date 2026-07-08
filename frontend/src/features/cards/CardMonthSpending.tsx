@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { MoneyValue } from '@/components/money-value'
 import { Button } from '@/components/ui/button'
@@ -7,6 +7,12 @@ import { useCategories } from '@/features/categories/useCategories'
 import { TransactionEditDialog } from '@/features/transactions/TransactionEditDialog'
 import type { Transaction } from '@/features/transactions/useTransactions'
 import { useTransactions } from '@/features/transactions/useTransactions'
+import { cn } from '@/lib/utils'
+import {
+  useCardInvoicePayment,
+  useMarkInvoicePaid,
+  useUnmarkInvoicePaid,
+} from './useCardInvoicePayment'
 
 const MONTH_LABELS = [
   'janeiro',
@@ -57,6 +63,22 @@ export function CardMonthSpending({
   const { dateFrom, dateTo } = useMemo(() => calendarMonthRange(year, month), [year, month])
   const { data: transactions, isLoading } = useTransactions({ cardId, dateFrom, dateTo })
   const { data: categories } = useCategories()
+  const { data: invoicePayment, isLoading: isLoadingInvoicePayment } = useCardInvoicePayment(
+    cardId,
+    year,
+    month,
+  )
+  const markInvoicePaid = useMarkInvoicePaid()
+  const unmarkInvoicePaid = useUnmarkInvoicePaid()
+  const isInvoicePaid = invoicePayment !== null && invoicePayment !== undefined
+
+  function toggleInvoicePaid() {
+    if (isInvoicePaid) {
+      unmarkInvoicePaid.mutate({ cardId, year, month })
+    } else {
+      markInvoicePaid.mutate({ cardId, year, month })
+    }
+  }
 
   const categoryNameById = useMemo(() => {
     const map = new Map<number, string>()
@@ -99,7 +121,23 @@ export function CardMonthSpending({
             <ChevronRight className="size-4" />
           </Button>
         </div>
-        {!isLoading && <MoneyValue cents={totalCents} className="text-lg font-semibold" />}
+        <div className="flex items-center gap-2">
+          {!isLoading && <MoneyValue cents={totalCents} className="text-lg font-semibold" />}
+          {!isLoadingInvoicePayment && (
+            <Button
+              type="button"
+              size="sm"
+              variant={isInvoicePaid ? 'default' : 'outline'}
+              className={cn(
+                isInvoicePaid && 'bg-success text-success-foreground hover:bg-success/90',
+              )}
+              onClick={toggleInvoicePaid}
+            >
+              {isInvoicePaid && <Check className="size-4" />}
+              {isInvoicePaid ? 'Fatura paga' : 'Marcar fatura como paga'}
+            </Button>
+          )}
+        </div>
       </div>
 
       {isLoading && (

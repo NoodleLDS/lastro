@@ -8,7 +8,14 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from lastro.db import get_session
 from lastro.models.card import Card
-from lastro.schemas.card import BillingCycleRead, CardCreate, CardRead, CardUpdate
+from lastro.models.card_invoice_payment import CardInvoicePayment
+from lastro.schemas.card import (
+    BillingCycleRead,
+    CardCreate,
+    CardInvoicePaymentRead,
+    CardRead,
+    CardUpdate,
+)
 from lastro.services.cards.billing_cycle import billing_cycle_range
 
 router = APIRouter(prefix="/cards", tags=["cards"])
@@ -92,3 +99,61 @@ async def deactivate_card(card_id: int, session: AsyncSession = Depends(get_sess
     card.is_active = False
     session.add(card)
     await session.commit()
+
+
+async def _get_invoice_payment(
+    session: AsyncSession, card_id: int, year: int, month: int
+) -> CardInvoicePayment | None:
+    statement = select(CardInvoicePayment).where(
+        CardInvoicePayment.card_id == card_id,
+        CardInvoicePayment.year == year,
+        CardInvoicePayment.month == month,
+    )
+    result = await session.exec(statement)
+    return result.first()
+
+
+@router.get("/{card_id}/invoice-payment", response_model=CardInvoicePaymentRead)
+async def get_invoice_payment(
+    card_id: int,
+    year: int,
+    month: int,
+    session: AsyncSession = Depends(get_session),
+) -> CardInvoicePayment:
+    payment = await _get_invoice_payment(session, card_id, year, month)
+    if payment is None:
+        raise HTTPException(status_code=404, detail="fatura ainda não marcada como paga")
+    return payment
+
+
+@router.put("/{card_id}/invoice-payment", response_model=CardInvoicePaymentRead)
+async def mark_invoice_paid(
+    card_id: int,
+    year: int,
+    month: int,
+    session: AsyncSession = Depends(get_session),
+) -> CardInvoicePayment:
+    card = await session.get(Card, card_id)
+    if card is None:
+        raise HTTPException(status_code=404, detail="cartão não encontrado")
+
+    payment = await _get_invoice_payment(session, card_id, year, month)
+    if payment is None:
+        payment = CardInvoicePayment(card_id=card_id, year=year, month=month)
+        session.add(payment)
+        await session.commit()
+        await session.refresh(payment)
+    return payment
+
+
+@router.delete("/{card_id}/invoice-payment", status_code=204)
+async def unmark_invoice_paid(
+    card_id: int,
+    year: int,
+    month: int,
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    payment = await _get_invoice_payment(session, card_id, year, month)
+    if payment is not None:
+        await session.delete(payment)
+        await session.commit()

@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
@@ -33,3 +33,10 @@ class BillingCycleRead(BaseModel):
     date_from: date
     date_to: date
     is_calendar_month: bool
+
+
+class CardInvoicePaymentRead(BaseModel):
+    card_id: int
+    year: int
+    month: int
+    paid_at: datetime
