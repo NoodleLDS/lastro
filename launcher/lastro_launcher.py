@@ -1,7 +1,4 @@
 import json
-
-# PROJECT_ROOT: pasta raiz do repositório.
-# O .exe compilado define LASTRO_PROJECT_ROOT via spec; em dev, dois níveis acima deste arquivo.
 import os as _os
 import shutil
 import subprocess
@@ -16,7 +13,18 @@ from pathlib import Path
 
 import httpx
 
-PROJECT_ROOT = Path(_os.environ.get("LASTRO_PROJECT_ROOT", Path(__file__).resolve().parent.parent))
+
+def _default_project_root() -> Path:
+    if getattr(sys, "frozen", False):
+        # Exe congelado (PyInstaller) vive em <raiz>/launcher/dist/Lastro.exe.
+        # Pra abrir de outro lugar, use um atalho (.lnk) — copiar o exe quebra a derivação.
+        return Path(sys.executable).resolve().parent.parent.parent
+    return Path(__file__).resolve().parent.parent
+
+
+# PROJECT_ROOT: pasta raiz do repositório, derivada da posição do exe/script;
+# LASTRO_PROJECT_ROOT no ambiente tem precedência.
+PROJECT_ROOT = Path(_os.environ.get("LASTRO_PROJECT_ROOT", _default_project_root()))
 LOG_PATH = PROJECT_ROOT / "launcher" / "lastro_launcher.log"
 LOGO_PATH = PROJECT_ROOT / "frontend" / "public" / "branding" / "lastro-logo-horizontal-dark-bg.png"
 WEB_URL = "http://localhost:5180"
@@ -249,6 +257,24 @@ def run_restart(window: "LoadingWindow") -> None:
 
 
 def run_startup(window: LoadingWindow) -> None:
+    # O exe é --windowed: exceção aqui morreria invisível. Mostra na janela.
+    try:
+        _run_startup(window)
+    except Exception as exc:  # noqa: BLE001
+        window.root.after(0, window.show_error, f"Erro inesperado no launcher: {exc}")
+
+
+def _run_startup(window: LoadingWindow) -> None:
+    if not (PROJECT_ROOT / "docker-compose.yml").exists():
+        window.root.after(
+            0,
+            window.show_error,
+            f"Raiz do projeto não encontrada em {PROJECT_ROOT}. "
+            "Mantenha o exe em launcher/dist (use atalho pra mover) "
+            "ou defina LASTRO_PROJECT_ROOT.",
+        )
+        return
+
     LOG_PATH.write_text("", encoding="utf-8")
 
     if not docker_engine_is_running():
